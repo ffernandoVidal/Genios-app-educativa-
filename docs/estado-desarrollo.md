@@ -162,3 +162,10 @@ Diagnóstico y decisiones en `docs/diagnostico-docente.md`. Decisiones del usuar
 - `GET /docente/resumen | estudiantes (búsqueda, aula, grado, rendimiento, orden, paginación) | estudiantes/{id}/estadisticas | .../actividad?anio&mes | .../materias/{id} | aulas/{id}/estadisticas`. Solo estudiantes activos de aulas activas propias; ajeno → 404 + auditoría `acceso_estudiante_no_autorizado`.
 - Sin implementar (por decisión): bandeja de solicitudes y notificaciones.
 - Pruebas: 44 unitarias; +9 de integración del módulo docente.
+
+## Centro de Control Docente — frontend (2026-10-15)
+Rutas bajo `/docente/*` con un marco responsive (menú lateral permanente ≥1024 px, compacto 600–1023, Drawer en móvil): `inicio` (cabina con mascota, 5 indicadores reales, accesos rápidos), `clases` (tarjetas, detalle con edición, archivo y estadísticas), `clases/nueva`, `alumnos/nuevo` (dos modalidades), `alumnos` (búsqueda, filtros por aula/grado/rendimiento, orden, paginación), `alumnos/:id` (ficha, período, materias, gráfica por día, calendario, detalle de materia, cambiar contraseña), `estadisticas` (clase + ranking) y `ajustes`.
+- Rendimiento siempre con color + icono + texto; sin partidas = SIN DATOS (nunca REFUERZO); variación solo con período anterior.
+- Redirecciones: sin sesión → `/docente`; estudiante/invitado → `/cabina`; docente → `/docente/inicio`.
+- Pruebas: Flutter 154 (analyze sin avisos; 25 nuevas del Centro de Control + 3 de redirecciones); backend 44 unitarias + 46 de integración (una intermitente, ver limitaciones); `flutter build web --release` correcto.
+- **Limitaciones:** no se ha visto en un navegador real (solo pruebas de widgets); sin bandeja de solicitudes ni notificaciones (decisión del usuario); materias por clase no existen; la prueba `Los_puntos_los_calcula...` falló una vez en la corrida completa (1 h 27 m de espera: bloqueo de red con Neon) y pasa en solitario; los datos reales de Neon (4 usuarios, 2 aulas, 5 partidas) son de uso manual del usuario.

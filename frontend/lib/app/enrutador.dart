@@ -11,6 +11,14 @@ import '../features/ajustes/presentacion/ajustes_pantalla.dart';
 import '../features/cabina/presentacion/cabina_pantalla.dart';
 import '../features/catalogo/presentacion/materias_pantalla.dart';
 import '../features/catalogo/presentacion/misiones_pantalla.dart';
+import '../features/docente/presentacion/ajustes_docente_pantalla.dart';
+import '../features/docente/presentacion/alumnos_docente_pantalla.dart';
+import '../features/docente/presentacion/clases_docente_pantalla.dart';
+import '../features/docente/presentacion/crear_alumno_pantalla.dart';
+import '../features/docente/presentacion/estadisticas_docente_pantalla.dart';
+import '../features/docente/presentacion/ficha_estudiante_pantalla.dart';
+import '../features/docente/presentacion/inicio_docente_pantalla.dart';
+import '../features/docente/presentacion/marco_docente.dart';
 import '../features/partida/dominio/argumentos_mision.dart';
 import '../features/partida/presentacion/partida_pantalla.dart';
 import '../features/progreso/presentacion/perfil_pantalla.dart';
@@ -34,16 +42,19 @@ GoRouter crearEnrutador(SesionApp sesion, {String googleClientId = ''}) {
     refreshListenable: sesion,
     redirect: (context, estado) {
       final ruta = estado.uri.path;
+      final esRutaDocente = ruta.startsWith('/docente/');
+      // Sin sesión: el Centro de Control pide el acceso docente; el resto vuelve a la bienvenida.
+      if (!sesion.activa && esRutaDocente) return '/docente';
       if (!sesion.activa && !publicas.contains(ruta)) return '/';
-      // El docente solo tiene su propia pantalla: la experiencia infantil es para estudiantes e invitados.
-      if (sesion.modo == ModoSesion.docente && ruta != '/docente') {
-        return '/docente';
+      // El docente solo tiene su Centro de Control: la experiencia infantil es para estudiantes e invitados.
+      if (sesion.modo == ModoSesion.docente && !esRutaDocente) {
+        return '/docente/inicio';
       }
       if (sesion.activa && soloSinSesion.contains(ruta)) return '/cabina';
       // Un estudiante o invitado con sesión no tiene nada que hacer en el acceso docente.
       if (sesion.activa &&
           sesion.modo != ModoSesion.docente &&
-          ruta == '/docente') {
+          (ruta == '/docente' || esRutaDocente)) {
         return '/cabina';
       }
       // El registro también se permite a un invitado (es la invitación a crear su cuenta).
@@ -69,6 +80,51 @@ GoRouter crearEnrutador(SesionApp sesion, {String googleClientId = ''}) {
       GoRoute(path: '/perfil', builder: (_, _) => const PerfilPantalla()),
       GoRoute(path: '/salon', builder: (_, _) => const SalonPantalla()),
       GoRoute(path: '/ajustes', builder: (_, _) => const AjustesPantalla()),
+      ShellRoute(
+        builder: (context, estado, hijo) =>
+            MarcoDocente(ubicacion: estado.uri.path, hijo: hijo),
+        routes: [
+          GoRoute(
+            path: '/docente/inicio',
+            builder: (_, _) => const InicioDocentePantalla(),
+          ),
+          GoRoute(
+            path: '/docente/clases',
+            builder: (_, _) => const ClasesDocentePantalla(),
+          ),
+          GoRoute(
+            path: '/docente/clases/nueva',
+            builder: (_, _) => const CrearClasePantalla(),
+          ),
+          GoRoute(
+            path: '/docente/clases/:id',
+            builder: (_, estado) =>
+                DetalleClasePantalla(aulaId: estado.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: '/docente/alumnos',
+            builder: (_, _) => const AlumnosDocentePantalla(),
+          ),
+          GoRoute(
+            path: '/docente/alumnos/nuevo',
+            builder: (_, _) => const CrearAlumnoPantalla(),
+          ),
+          GoRoute(
+            path: '/docente/alumnos/:id',
+            builder: (_, estado) => FichaEstudiantePantalla(
+              estudianteId: estado.pathParameters['id']!,
+            ),
+          ),
+          GoRoute(
+            path: '/docente/estadisticas',
+            builder: (_, _) => const EstadisticasDocentePantalla(),
+          ),
+          GoRoute(
+            path: '/docente/ajustes',
+            builder: (_, _) => const AjustesDocentePantalla(),
+          ),
+        ],
+      ),
       GoRoute(
         path: '/materia/:id',
         builder: (_, estado) => MisionesPantalla(

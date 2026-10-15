@@ -406,44 +406,82 @@ class FalsoSalon implements RepositorioSalon {
   }
 }
 
+/// Falso del Centro de Control Docente: datos fijos para probar pantallas; no calcula nada.
 class FalsoDocente implements RepositorioDocente {
   FalsoDocente({
     List<AulaDocente>? aulas,
-    Map<String, List<EstudianteDeAula>>? estudiantes,
-  }) : _aulas = aulas ?? [],
-       _estudiantes = estudiantes ?? {};
+    this.filas = const [],
+    this.fichaDatos,
+    this.dias = const [],
+    this.claseDatos,
+    this.resumenDatos,
+  }) : _aulas = aulas ?? [];
 
   final List<AulaDocente> _aulas;
-  final Map<String, List<EstudianteDeAula>> _estudiantes;
+  List<FilaEstudiante> filas;
+  FichaEstudiante? fichaDatos;
+  List<DiaActividad> dias;
+  EstadisticasClase? claseDatos;
+  ResumenDocente? resumenDatos;
+
   ExcepcionApi? errorAgregar;
+  ExcepcionApi? errorResumen;
   String? ultimoUsuarioAgregado;
   int codigosNuevos = 0;
+  final archivadas = <String>[];
+  final consultasAlumnos = <Map<String, Object?>>[];
+  final consultasRanking = <(String?, int?)>[];
+  List<FilaRanking> filasRanking = const [];
+  final consultasPeriodo = <String>[];
 
   @override
   Future<List<AulaDocente>> aulas() async => List.of(_aulas);
 
   @override
-  Future<AulaDocente> crearAula(String nombre) async {
+  Future<AulaDocente> crearAula({
+    required String nombre,
+    int? grado,
+    String? seccion,
+    String? descripcion,
+  }) async {
     final aula = AulaDocente(
       id: 'aula-${_aulas.length + 1}',
       nombre: nombre,
       codigoAcceso: 'K${4000 + _aulas.length}',
+      grado: grado,
+      seccion: seccion,
+      descripcion: descripcion,
     );
     _aulas.add(aula);
     return aula;
   }
 
   @override
-  Future<List<EstudianteDeAula>> estudiantes(String aulaId) async =>
-      List.of(_estudiantes[aulaId] ?? []);
-
-  List<FilaRanking> filasRanking = const [];
-  final List<(String?, int?)> consultasRanking = [];
+  Future<AulaDocente> editarAula(
+    String aulaId, {
+    String? nombre,
+    int? grado,
+    String? seccion,
+    String? descripcion,
+  }) async {
+    final i = _aulas.indexWhere((a) => a.id == aulaId);
+    final a = _aulas[i];
+    _aulas[i] = AulaDocente(
+      id: a.id,
+      nombre: nombre ?? a.nombre,
+      codigoAcceso: a.codigoAcceso,
+      grado: grado ?? a.grado,
+      seccion: seccion ?? a.seccion,
+      descripcion: descripcion ?? a.descripcion,
+      totalEstudiantes: a.totalEstudiantes,
+    );
+    return _aulas[i];
+  }
 
   @override
-  Future<List<FilaRanking>> ranking({String? aulaId, int? asignaturaId}) async {
-    consultasRanking.add((aulaId, asignaturaId));
-    return filasRanking;
+  Future<void> archivarAula(String aulaId) async {
+    archivadas.add(aulaId);
+    _aulas.removeWhere((a) => a.id == aulaId);
   }
 
   @override
@@ -454,13 +492,6 @@ class FalsoDocente implements RepositorioDocente {
   }) async {
     if (errorAgregar != null) throw errorAgregar!;
     ultimoUsuarioAgregado = nombreUsuario;
-    (_estudiantes[aulaId] ??= []).add(
-      EstudianteDeAula(
-        id: 'e-$nombreUsuario',
-        nombreMostrar: nombreMostrar,
-        nombreUsuario: nombreUsuario,
-      ),
-    );
     return CodigoActivacion(
       nombreUsuario: nombreUsuario,
       codigo: 'ABCD2345',
@@ -471,13 +502,145 @@ class FalsoDocente implements RepositorioDocente {
   @override
   Future<CodigoActivacion> nuevoCodigo(
     String aulaId,
-    EstudianteDeAula estudiante,
+    String estudianteId,
+    String nombreUsuario,
   ) async {
     codigosNuevos++;
     return CodigoActivacion(
-      nombreUsuario: estudiante.nombreUsuario ?? '',
+      nombreUsuario: nombreUsuario,
       codigo: 'NUEVO9876',
       expiraEn: DateTime.now().toUtc().add(const Duration(minutes: 60)),
     );
+  }
+
+  @override
+  Future<ResumenDocente> resumen(PeriodoConsulta periodo) async {
+    if (errorResumen != null) throw errorResumen!;
+    return resumenDatos ??
+        const ResumenDocente(
+          clasesActivas: 0,
+          estudiantesAsignados: 0,
+          estudiantesActivosRecientes: 0,
+          promedioAciertos: null,
+          rendimiento: Rendimiento.sinDatos,
+          partidasCompletadas: 0,
+        );
+  }
+
+  @override
+  Future<PaginaEstudiantes> alumnos({
+    String? busqueda,
+    String? aulaId,
+    int? grado,
+    Rendimiento? rendimiento,
+    String orden = 'nombre',
+    int pagina = 1,
+    int tamano = 10,
+    PeriodoConsulta periodo = const PeriodoConsulta.ultimos(30),
+  }) async {
+    consultasAlumnos.add({
+      'q': busqueda,
+      'aulaId': aulaId,
+      'grado': grado,
+      'rendimiento': rendimiento?.codigo,
+      'orden': orden,
+      'pagina': pagina,
+    });
+    return PaginaEstudiantes(
+      filas: filas,
+      pagina: pagina,
+      tamano: tamano,
+      total: filas.length,
+    );
+  }
+
+  @override
+  Future<FichaEstudiante> ficha(
+    String estudianteId,
+    PeriodoConsulta periodo,
+  ) async {
+    consultasPeriodo.add(periodo.consulta);
+    return fichaDatos ??
+        const FichaEstudiante(
+          id: 'e1',
+          nombreMostrar: 'Estudiante',
+          aulas: [],
+          ultimaActividad: null,
+          partidasCompletadas: 0,
+          partidasAprobadas: 0,
+          promedioAciertos: null,
+          rendimiento: Rendimiento.sinDatos,
+          tiempoMedioSegundos: null,
+          misionesCompletadas: 0,
+          leccionesAprobadas: 0,
+          variacion: null,
+          promedioGrupo: null,
+          materias: [],
+          partidasPorDia: [],
+        );
+  }
+
+  @override
+  Future<List<DiaActividad>> actividad(
+    String estudianteId,
+    int anio,
+    int mes,
+  ) async => dias;
+
+  @override
+  Future<DetalleMateria> detalleMateria(
+    String estudianteId,
+    int asignaturaId,
+  ) async => const DetalleMateria(
+    nombre: 'Matematicas',
+    promedioAciertos: 70,
+    rendimiento: Rendimiento.aprobado,
+    partidas: 1,
+    tiempoMedioSegundos: 95,
+    misionesTrabajadas: 1,
+    leccionesAprobadas: 1,
+    leccionesPendientes: 7,
+    lecciones: [
+      LeccionEstado(
+        nombre: 'Multiplicaciones',
+        aprobada: true,
+        intentos: 1,
+        mejorAciertos: 7,
+      ),
+    ],
+    historial: [],
+    errores: [
+      ErrorFrecuente(enunciado: '¿Cuánto es 7 × 8?', errores: 2, veces: 3),
+    ],
+  );
+
+  @override
+  Future<EstadisticasClase> clase(
+    String aulaId,
+    PeriodoConsulta periodo,
+  ) async {
+    consultasPeriodo.add(periodo.consulta);
+    return claseDatos ??
+        const EstadisticasClase(
+          aulaId: 'a1',
+          nombre: 'Clase',
+          totalEstudiantes: 0,
+          estudiantesActivos: 0,
+          partidasCompletadas: 0,
+          promedioAciertos: null,
+          rendimiento: Rendimiento.sinDatos,
+          refuerzo: 0,
+          repaso: 0,
+          aprobado: 0,
+          sinDatos: 0,
+          materias: [],
+          semanas: [],
+        );
+  }
+
+  @override
+  Future<List<FilaRanking>> ranking({String? aulaId, int? asignaturaId}) async {
+    consultasRanking.add((aulaId, asignaturaId));
+    return filasRanking;
   }
 }

@@ -42,3 +42,13 @@ class ColoresMaterias {
   /// Para una materia nueva que aún no tiene color propio.
   static const Color generico = Color(0xFFB794F4);
 }
+
+/// Colores del rendimiento académico (Centro de Control Docente). Nunca se usan solos: siempre con icono y texto.
+class ColoresRendimiento {
+  const ColoresRendimiento._();
+
+  static const Color refuerzo = Color(0xFFEF4444);
+  static const Color repaso = Color(0xFFF59E0B);
+  static const Color aprobado = Color(0xFF65C947);
+  static const Color sinDatos = Color(0xFF8FA6B0);
+}

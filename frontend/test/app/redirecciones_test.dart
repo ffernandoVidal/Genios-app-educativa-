@@ -127,10 +127,59 @@ void main() {
           '/cabina',
           ...privadas,
         ]) {
-          expect(await destino(t, ruta), '/docente', reason: ruta);
+          expect(await destino(t, ruta), '/docente/inicio', reason: ruta);
         }
       },
     );
+  });
+
+  group('Centro de Control Docente', () {
+    const rutasDocente = [
+      '/docente/inicio',
+      '/docente/clases',
+      '/docente/clases/nueva',
+      '/docente/clases/a1',
+      '/docente/alumnos',
+      '/docente/alumnos/nuevo',
+      '/docente/alumnos/e1',
+      '/docente/estadisticas',
+      '/docente/ajustes',
+    ];
+
+    testWidgets('sin sesión pide el acceso docente', (t) async {
+      await abrirApp(t);
+      for (final ruta in rutasDocente) {
+        expect(await destino(t, ruta), '/docente', reason: ruta);
+      }
+    });
+
+    testWidgets('un estudiante o invitado no entra al Centro de Control', (
+      t,
+    ) async {
+      final app = await abrirApp(t);
+      app.sesion.iniciarCuenta(
+        tokenAcceso: 'T',
+        roles: ['estudiante'],
+        nombre: 'Ana',
+      );
+      await t.pumpAndSettle();
+      for (final ruta in rutasDocente) {
+        expect(await destino(t, ruta), '/cabina', reason: ruta);
+      }
+    });
+
+    testWidgets('el docente llega a todas sus secciones', (t) async {
+      final app = await abrirApp(t);
+      app.sesion.iniciarCuenta(
+        tokenAcceso: 'T',
+        roles: ['docente'],
+        nombre: 'Profe',
+      );
+      await t.pumpAndSettle();
+      for (final ruta in rutasDocente) {
+        expect(await destino(t, ruta), ruta, reason: ruta);
+      }
+    });
   });
 
   group('cerrar sesión', () {

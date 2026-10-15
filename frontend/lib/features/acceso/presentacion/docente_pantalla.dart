@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../core/sesion/sesion_app.dart';
 import '../../../diseno/componentes/astronauta_genios.dart';
-import '../../../diseno/componentes/botones_juego.dart';
 import '../../../diseno/componentes/plantilla_pantalla.dart';
 import '../../../diseno/tokens/colores.dart';
 import '../../../diseno/tokens/medidas.dart';
 import '../../../diseno/tokens/tipografia.dart';
-import '../../docente/presentacion/panel_docente_pantalla.dart';
 import 'acceso_cubit.dart';
 import 'boton_google/boton_google.dart';
 import 'mensaje_error_acceso.dart';
 
-/// Punto de entrada separado para docentes: acceso con Google. El panel docente todavía no existe;
-/// al entrar, la pantalla lo dice con claridad en lugar de simular datos.
+/// Punto de entrada separado para docentes: acceso con Google. Al entrar, el enrutador los lleva al Centro de Control.
 class DocentePantalla extends StatelessWidget {
   const DocentePantalla({super.key, required this.googleClientId});
 
@@ -24,9 +19,6 @@ class DocentePantalla extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sesion = context.read<FuenteModoSesion>();
-    final dentro = sesion.modo == ModoSesion.docente;
-    if (dentro) return const PanelDocentePantalla();
     return PlantillaPantalla(
       titulo: 'Acceso docente',
       hijo: BlocBuilder<AccesoCubit, EstadoAcceso>(
@@ -37,31 +29,18 @@ class DocentePantalla extends StatelessWidget {
             const AstronautaGenios(alto: 150),
             const SizedBox(height: Espaciado.l),
             Text(
-              dentro
-                  ? 'Hola, ${sesion.nombre}'
-                  : 'Entra con tu cuenta de Google',
+              'Entra con tu cuenta de Google',
               textAlign: TextAlign.center,
               style: Tipografia.titulo(26),
             ),
             const SizedBox(height: Espaciado.m),
             Text(
-              dentro
-                  ? 'Tu cuenta docente está lista. El panel para crear aulas y consultar el progreso llegará pronto.'
-                  : 'Podrás crear aulas y consultar el progreso de tus estudiantes.',
+              'Podrás crear clases y consultar el progreso de tus estudiantes.',
               textAlign: TextAlign.center,
               style: Tipografia.texto(18, color: ColoresGenios.textoSuave),
             ),
             const SizedBox(height: Espaciado.xl),
-            if (dentro)
-              BotonSecundarioJuego(
-                texto: 'CERRAR SESIÓN',
-                icono: Icons.logout_rounded,
-                alPulsar: () async {
-                  await context.read<AccesoCubit>().salir();
-                  if (context.mounted) context.go('/');
-                },
-              )
-            else if (googleClientId.isEmpty)
+            if (googleClientId.isEmpty)
               Text(
                 'El acceso con Google no está configurado todavía.',
                 textAlign: TextAlign.center,

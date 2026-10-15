@@ -46,7 +46,7 @@ void main() {
 
         expect(app.acceso.ultimoIdToken, 'credencial-de-prueba');
         expect(app.sesion.modo, ModoSesion.docente);
-        expect(find.text('Hola, Profe Rosa'), findsOneWidget);
+        expect(find.textContaining('Profe Rosa'), findsOneWidget);
         expect(find.text('JUGAR'), findsNothing);
       },
     );
@@ -59,10 +59,12 @@ void main() {
       await t.tap(find.text('CONTINUAR CON GOOGLE'));
       await t.pumpAndSettle();
 
-      final enrutador = GoRouter.of(t.element(find.text('Hola, Profe Rosa')));
+      final enrutador = GoRouter.of(
+        t.element(find.textContaining('Profe Rosa')),
+      );
       enrutador.go('/materias');
       await t.pumpAndSettle();
-      expect(find.text('Hola, Profe Rosa'), findsOneWidget);
+      expect(find.textContaining('Profe Rosa'), findsOneWidget);
       expect(app.sesion.modo, ModoSesion.docente);
     });
 
@@ -118,7 +120,9 @@ void main() {
       await t.tap(find.text('CONTINUAR CON GOOGLE'));
       await t.pumpAndSettle();
 
-      await t.tap(find.text('Cerrar sesión'));
+      await t.tap(find.text('Ajustes').first);
+      await t.pumpAndSettle();
+      await t.tap(find.text('CERRAR SESIÓN'));
       await t.pumpAndSettle();
       expect(app.sesion.activa, isFalse);
       expect(find.text('JUGAR'), findsOneWidget);

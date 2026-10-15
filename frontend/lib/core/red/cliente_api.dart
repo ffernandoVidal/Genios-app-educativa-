@@ -31,6 +31,10 @@ class ClienteApi {
   Future<dynamic> enviar(String ruta, [Object? cuerpo]) =>
       _enviar('POST', ruta, cuerpo: cuerpo);
 
+  /// Edición parcial (`PATCH`): lo que va en null no cambia.
+  Future<dynamic> modificar(String ruta, Object cuerpo) =>
+      _enviar('PATCH', ruta, cuerpo: cuerpo);
+
   Future<dynamic> _enviar(
     String metodo,
     String ruta, {
@@ -64,6 +68,12 @@ class ClienteApi {
     try {
       final peticion = metodo == 'GET'
           ? _cliente.get(uri, headers: cabeceras)
+          : metodo == 'PATCH'
+          ? _cliente.patch(
+              uri,
+              headers: cabeceras,
+              body: cuerpo == null ? null : jsonEncode(cuerpo),
+            )
           : _cliente.post(
               uri,
               headers: cabeceras,
