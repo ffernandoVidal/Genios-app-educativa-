@@ -148,3 +148,8 @@ Recorrido: Bienvenida → (invitado: solo apodo) → Cabina → JUGAR → Materi
 - Resultado: 370 preguntas, 37 categorías, 0 rechazadas, 40 avisos de revisión (37 categorías con exactamente 10 preguntas; 3 enunciados repetidos). Informe: `data/educational/informe_importacion.json`.
 - Ensayo en Neon dentro de una transacción con ROLLBACK: 4 niveles, 37 categorías, 370 preguntas, 1480 opciones, 370 claves, todas con 4 opciones y clave; Neon quedó en 0 filas.
 - Mapeo propuesto: asignatura → «Nivel 1» → categoría (una por `category_code`, en el orden de `subjects[].categories`). Puntos del banco ignorados (el servidor calcula 10/15/20). Sin pistas. Todo pendiente de revisión curricular (CNB).
+
+## Banco de 370 preguntas APLICADO en Neon (2026-10-15)
+- `003_banco_370.sql` aplicado: 4 niveles, 37 categorías, 370 preguntas, 1480 opciones, 370 claves. Segunda ejecución sin cambios (idempotente). Matemáticas 8 categorías/80, Lenguaje 10/100, Naturales 9/90, Sociales 10/100.
+- Humo con la API real (invitado): `GET /niveles/{id}/categorias` → primera categoría «disponible», el resto «bloqueada»; `POST /partidas` → 10 preguntas, 4 opciones, sin clave en la respuesta. Datos del humo borrados.
+- Sigue pendiente: revisión curricular (CNB), pistas, regla de desbloqueo ≥ 7/10 (hoy basta una partida completada) y variación entre partidas (solo 10 preguntas por categoría).
