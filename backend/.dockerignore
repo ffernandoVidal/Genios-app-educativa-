@@ -1,0 +1,22 @@
+# Generados en Windows: contienen rutas locales (p. ej. carpetas de NuGet de Visual Studio) y rompen la compilacion en Linux.
+**/bin/
+**/obj/
+**/.vs/
+**/*.user
+
+# Secretos y configuracion local
+**/.env
+**/.env.*
+**/appsettings.*.local.json
+**/*.pem
+**/*.key
+**/*.pfx
+
+# Lo que la imagen no necesita
+tests/
+.git/
+.gitignore
+.dockerignore
+Dockerfile
+dotnet-tools.json
+**/*.md

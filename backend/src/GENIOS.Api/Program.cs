@@ -3,6 +3,7 @@ using GENIOS.Api.Configuration;
 using GENIOS.Infrastructure;
 using GENIOS.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,19 @@ var builder = WebApplication.CreateBuilder(args);
 if (builder.Environment.IsDevelopment())
     DotEnvLoader.Load(builder.Environment.ContentRootPath);
 builder.Configuration.AddEnvironmentVariables(); // refresca con lo cargado desde .env
+
+// Render (y otros proveedores) indican el puerto en PORT; sin PORT se usa ASPNETCORE_URLS.
+var puerto = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(puerto))
+    builder.WebHost.UseUrls($"http://0.0.0.0:{puerto}");
+
+// Detras del proxy del proveedor: el esquema y la IP reales vienen en X-Forwarded-*.
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    o.KnownIPNetworks.Clear();
+    o.KnownProxies.Clear();
+});
 
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
@@ -20,6 +34,8 @@ builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 // Errores no controlados -> Problem Details sin trazas ni detalles internos.
 app.UseExceptionHandler();
