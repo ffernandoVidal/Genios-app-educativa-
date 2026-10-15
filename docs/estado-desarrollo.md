@@ -92,5 +92,13 @@ Ver `docs/contenido-inicial.md`. `002_contenido_inicial.sql` es idempotente (com
 - Backend: explicación de la pregunta en la retroalimentación; metadatos visuales del catálogo; nombre "Comunicación y Lenguaje"; logros; Google con Client ID; auditar más accesos denegados; medir rendimiento; CORS/cookies por entorno.
 - Contenido: aprobar y aplicar `002_contenido_inicial.sql` (hoy Neon no tiene categorías ni preguntas); Sociales y Naturales requieren pensum.
 
+## Frontend — incremento 1 (2026-10-14)
+`frontend/` (Flutter web/PWA, `flutter_bloc` + `go_router`), creado nuevo en este repositorio. Ver `frontend/README.md`.
+**Implementado:** cliente HTTP (cookies, `X-GENIOS-CSRF`, renovación única compartida ante 401, Problem Details, fallos de red), sesión en memoria, bienvenida, entrar como invitado, inicio de sesión de estudiante, salir, universo de materias y mapa de misiones con los cuatro estados y el requisito de desbloqueo; estados de carga, error con reintento y vacío; diseño adaptable (360, 820 y 1440 px).
+**Comprobado (reproducible):** `flutter analyze` sin avisos; `flutter test` 33 correctas (cliente HTTP 12, repositorio y cubits 6, flujos de pantallas 15 incluidos desbordamiento en 3 tamaños y etiquetas de accesibilidad); `flutter build web --release` compila. Una prueba temporal (no versionada) ejecutó los repositorios reales contra la API y Neon: 4 materias, registro e inicio de sesión de estudiante, mapa con `disponible`/`bloqueada` + requisito, materia vacía, error `credenciales_invalidas`, sesión de invitado; luego se borró todo lo creado (Neon en 0). CORS verificado con peticiones reales: origen permitido recibe `Allow-Credentials` y la cookie es HttpOnly; origen ajeno no recibe cabeceras CORS.
+**Defectos reales hallados y corregidos por las pruebas:** desbordamiento de las tarjetas de planeta en pantallas de 360 px; estado inicial `Cargando<Never>` distinto de `Cargando<T>`.
+**No comprobado:** ejecución en un navegador real (cookies/CORS de punta a punta con Chrome); contraste y lectores de pantalla reales (solo etiquetas semánticas); íconos y arte definitivos (los íconos de la PWA siguen siendo los de Flutter).
+**Todavía sin conexión en el front:** iniciar una misión (la tarjeta aún no es pulsable), partida y resultados, registro de estudiante / unirse a aula, aviso de registro del invitado, progreso, puntos, estadísticas, tiempo disponible, panel docente. Los nombres de materia con tilde se ponen en el cliente por código (la BD guarda `Matematicas`).
+
 ## Siguiente paso
-Aprobación del plan del frontend y de las decisiones abiertas.
+Siguiente incremento del frontend: partida completa de 10 preguntas (inicio, respuesta, retroalimentación, mecha, resultado, reanudación). Requiere contenido en Neon (`002_contenido_inicial.sql`, pendiente de aprobación) y las decisiones abiertas (explicación de la pregunta, metadatos del mapa, nombre de Lenguaje).
