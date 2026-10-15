@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace GENIOS.Infrastructure.Persistence.Entities;
@@ -23,6 +23,11 @@ public partial class Aulas
     public DateTime CreadaEn { get; set; }
 
     public DateTime? EliminadaEn { get; set; }
+
+    /// <summary>Grado escolar de la clase (1 a 6). Opcional.</summary>
+    public short? Grado { get; set; }
+
+    public string? Seccion { get; set; }
 
     public virtual Usuarios Docente { get; set; } = null!;
 

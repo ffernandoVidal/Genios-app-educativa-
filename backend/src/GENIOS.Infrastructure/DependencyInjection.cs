@@ -1,3 +1,4 @@
+using GENIOS.Application.Docente;
 using GENIOS.Application.Aulas;
 using GENIOS.Application.Autenticacion;
 using GENIOS.Infrastructure.GestionAulas;
@@ -55,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<IServicioPartidas, ServicioPartidas>();
         services.AddScoped<IServicioInvitados, ServicioInvitados>();
         services.AddScoped<IServicioEstadisticas, ServicioEstadisticas>();
+        services.AddScoped<IServicioDocente, GENIOS.Infrastructure.Docente.ServicioDocente>();
         return services;
     }
 }

@@ -27,6 +27,19 @@ public class AulasController(IServicioAulas aulas, IServicioAutenticacion autent
     public async Task<ActionResult<AulaDto>> Crear(SolicitudCrearAula solicitud, CancellationToken ct) =>
         await aulas.CrearAsync(UsuarioId, solicitud, ct);
 
+    [HttpPatch("{aulaId:guid}")]
+    [Authorize(Roles = CodigosRol.Docente)]
+    public async Task<ActionResult<AulaDto>> Editar(Guid aulaId, SolicitudEditarAula solicitud, CancellationToken ct) =>
+        await aulas.EditarAsync(UsuarioId, aulaId, solicitud, ct);
+
+    [HttpPost("{aulaId:guid}/archivar")]
+    [Authorize(Roles = CodigosRol.Docente)]
+    public async Task<IActionResult> Archivar(Guid aulaId, CancellationToken ct)
+    {
+        await aulas.ArchivarAsync(UsuarioId, aulaId, ct);
+        return NoContent();
+    }
+
     [HttpGet("mi-aula")]
     public async Task<ActionResult<IReadOnlyList<AulaDto>>> MiAula(CancellationToken ct) =>
         Ok(await aulas.ListarMisAulasAsync(UsuarioId, User.IsInRole(CodigosRol.Docente), ct));

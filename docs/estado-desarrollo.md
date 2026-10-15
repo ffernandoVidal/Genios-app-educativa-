@@ -153,3 +153,12 @@ Recorrido: Bienvenida → (invitado: solo apodo) → Cabina → JUGAR → Materi
 - `003_banco_370.sql` aplicado: 4 niveles, 37 categorías, 370 preguntas, 1480 opciones, 370 claves. Segunda ejecución sin cambios (idempotente). Matemáticas 8 categorías/80, Lenguaje 10/100, Naturales 9/90, Sociales 10/100.
 - Humo con la API real (invitado): `GET /niveles/{id}/categorias` → primera categoría «disponible», el resto «bloqueada»; `POST /partidas` → 10 preguntas, 4 opciones, sin clave en la respuesta. Datos del humo borrados.
 - Sigue pendiente: revisión curricular (CNB), pistas, regla de desbloqueo ≥ 7/10 (hoy basta una partida completada) y variación entre partidas (solo 10 preguntas por categoría).
+
+## Centro de Control Docente — backend (2026-10-15)
+Diagnóstico y decisiones en `docs/diagnostico-docente.md`. Decisiones del usuario: entrada directa con código (sin bandeja de solicitudes), migración 004 aprobada, registro asistido = código de activación existente.
+- Migración **004 aplicada** (`aulas.grado`, `aulas.seccion`, índice de partidas válidas por fecha); idempotente, con reversión documentada.
+- `ReglasRendimiento` (dominio): <40 REFUERZO; 40–60 inclusive REPASO; >60 APROBADO; sin partidas SIN DATOS; clasifica con el valor exacto (60,4 → APROBADO).
+- Aulas: `PATCH /aulas/{id}` (nombre, descripción, grado, sección; el código no cambia), `POST /aulas/{id}/archivar` (eliminación lógica; conserva miembros y partidas), `AulaDto` con grado, sección y total de estudiantes.
+- `GET /docente/resumen | estudiantes (búsqueda, aula, grado, rendimiento, orden, paginación) | estudiantes/{id}/estadisticas | .../actividad?anio&mes | .../materias/{id} | aulas/{id}/estadisticas`. Solo estudiantes activos de aulas activas propias; ajeno → 404 + auditoría `acceso_estudiante_no_autorizado`.
+- Sin implementar (por decisión): bandeja de solicitudes y notificaciones.
+- Pruebas: 44 unitarias; +9 de integración del módulo docente.

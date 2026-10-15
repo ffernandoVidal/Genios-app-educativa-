@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using GENIOS.Infrastructure.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -226,6 +226,10 @@ public partial class GeniosDbContext : DbContext
             entity.Property(e => e.Nombre)
                 .HasMaxLength(140)
                 .HasColumnName("nombre");
+            entity.Property(e => e.Grado).HasColumnName("grado");
+            entity.Property(e => e.Seccion)
+                .HasMaxLength(10)
+                .HasColumnName("seccion");
 
             entity.HasOne(d => d.Docente).WithMany(p => p.Aulas)
                 .HasForeignKey(d => d.DocenteId)

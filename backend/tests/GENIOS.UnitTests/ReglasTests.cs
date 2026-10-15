@@ -125,3 +125,32 @@ public class GeneradorOperacionesTests
     public void Una_operacion_desconocida_se_rechaza() =>
         Assert.Throws<ArgumentException>(() => GeneradorOperaciones.Generar("potencia", 1, 5, new Random(1)));
 }
+
+public class ReglasRendimientoTests
+{
+    [Theory]
+    [InlineData(0, 10, NivelRendimiento.Refuerzo)]
+    [InlineData(3, 10, NivelRendimiento.Refuerzo)]   // 30 %
+    [InlineData(4, 10, NivelRendimiento.Repaso)]     // 40 % entra en REPASO
+    [InlineData(6, 10, NivelRendimiento.Repaso)]     // 60 % sigue en REPASO
+    [InlineData(7, 10, NivelRendimiento.Aprobado)]   // 70 %
+    [InlineData(10, 10, NivelRendimiento.Aprobado)]
+    [InlineData(0, 0, NivelRendimiento.SinDatos)]    // sin partidas: no es REFUERZO
+    public void Clasifica_con_los_rangos_oficiales(int aciertos, int evaluadas, NivelRendimiento esperado) =>
+        Assert.Equal(esperado, ReglasRendimiento.Clasificar(aciertos, evaluadas));
+
+    [Theory]
+    [InlineData(39.99, NivelRendimiento.Refuerzo)]
+    [InlineData(40.0, NivelRendimiento.Repaso)]
+    [InlineData(60.0, NivelRendimiento.Repaso)]
+    [InlineData(60.4, NivelRendimiento.Aprobado)]    // se muestra como 60 %, pero es APROBADO
+    public void Los_promedios_se_clasifican_sin_redondear(double porcentaje, NivelRendimiento esperado) =>
+        Assert.Equal(esperado, ReglasRendimiento.Clasificar((decimal)porcentaje));
+
+    [Fact]
+    public void Sin_porcentaje_no_hay_datos() => Assert.Equal(NivelRendimiento.SinDatos, ReglasRendimiento.Clasificar((decimal?)null));
+
+    [Fact]
+    public void Aprobar_una_partida_de_diez_exige_siete_aciertos() =>
+        Assert.Equal(7, ReglasRendimiento.AciertosParaAprobarPartida);
+}
