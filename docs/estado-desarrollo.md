@@ -1,0 +1,81 @@
+# Estado de desarrollo — GENIOS
+
+**Fase actual:** 0 (auditoría técnica) — completada, pendiente de aprobación.
+**Fecha:** 2026-10-14
+
+## Entorno observado (comprobado)
+| Herramienta | Resultado |
+|---|---|
+| .NET SDK | 10.0.401 (también 9.0.305) |
+| Flutter / Dart | 3.47.1 / 3.13.1 |
+| Git | 2.51.0 |
+| Node | 22.19.0 |
+| psql | 17.9, en `C:\Program Files\PostgreSQL\17\bin` (no está en el PATH) |
+| Chrome (web) | OK |
+| Android toolchain | Licencias sin aceptar (no bloquea la versión web) |
+| `ConnectionStrings__GeniosDatabase` | NO definida |
+| Repositorio Git | No inicializado |
+
+## Esquema
+- Script candidato: `C:\Users\Ferna\Downloads\genios_base_datos_postgresql_es.sql` (37 tablas, v1.0-draft, 2026-10-14).
+- Existen otros scripts antiguos de 18 tablas en inglés (`Test\esquemas\...`) que NO corresponden a este diseño.
+- **PENDIENTE:** confirmar que el script de Downloads es el ejecutado en Neon.
+- No se ha accedido a Neon.
+
+## Decisiones
+- CONFIRMADO: ver sección 3 del prompt maestro.
+- PENDIENTE: vinculación tutor–estudiante, ventana de reanudación, criterio de correo educativo, inactividad, zona horaria diaria, criterio de "categoría completada", tokens de sesión.
+
+## Fase 1 — backend (2026-10-14)
+- `backend/GENIOS.sln`: Api, Application, Domain, Infrastructure + UnitTests, IntegrationTests (.NET 10).
+- `GET /health` y `GET /health/ready` (SELECT 1 a Neon, timeout 5 s, sin detalles en la respuesta).
+- `.env` se carga solo en Development (`DotEnvLoader`); las variables de entorno reales tienen prioridad.
+- Verificado: `dotnet test` → 4/4 pasan (incluye Neon real y sin filtrar credenciales); API ejecutada: /health 200, /health/ready 200, sin secretos en logs.
+- No hay pruebas unitarias aún (UnitTests vacío). Frontend NO iniciado. `git init` NO ejecutado.
+
+## Fase 2 — persistencia (2026-10-14)
+- Scaffold EF Core database-first de las 39 tablas en `Infrastructure/Persistence`; `GeniosDbContext` sobre `NpgsqlDataSource`.
+- Esquema cambiado solo con scripts SQL revisados en `database/migraciones/`. Aplicada: `001_autenticacion.sql`.
+
+## Fase 3 y 4 — autenticación y aulas (2026-10-14)
+- Capas: Domain (reglas, `ExcepcionNegocio`), Application (DTOs + interfaces), Infrastructure (servicios con EF), Api (controladores, JWT, CORS, límite de intentos).
+- Estudiante: registro con código de aula, login con usuario/contraseña. Google: `POST /autenticacion/google` implementado, SIN probar con un idToken real (falta `Autenticacion__GoogleClientId`).
+- Tokens: JWT de 15 min + refresh rotativo de 7 días en cookie HttpOnly (hash en BD, reutilización revoca la familia).
+- Aulas: crear (docente verificado), unirse (idempotente), listar, retirar. Reinicio de contraseña por código temporal emitido por el docente.
+- Rol docente: solo si el dominio del correo está en `Autenticacion:DominiosDocentes` (vacío por defecto = nadie se verifica solo).
+- Verificación manual (script temporal, no incluido en pruebas): 48/48 comprobaciones correctas contra Neon; datos de prueba borrados.
+- NO implementado aún: `/estudiantes/yo/*` (progreso, estadísticas), `/aulas/{id}/estadisticas`, control de 90 min (Fase 5), `solicitudes_aula` queda sin uso.
+- Deuda técnica conocida: `ON DELETE SET NULL` + CHECK de propietario en `partidas`/`sesiones_juego` impide borrar usuarios o sesiones de invitado con partidas.
+- Despliegue: el límite de intentos usa la IP directa; detrás de un proxy hay que configurar cabeceras reenviadas.
+
+## Fase 5 — contenido, partidas, puntos y tiempo (2026-10-14)
+- Endpoints: asignaturas/niveles/categorías (+progreso), partidas (crear, obtener, pregunta-actual, respuestas, reanudar, finalizar, abandonar, resultado), `estudiantes/yo/uso-diario` (+latido).
+- Valores iniciales (config `Juego`): 90 min/día, inactividad 60 s, America/Guatemala, ventana de reanudación 10 min, mecha 30 s.
+- Reglas PROPUESTAS aplicadas: mecha = tercer error en la MISMA pregunta (dura 30 s; si vence, la partida termina y no se reanuda); puntos solo por respuesta correcta (cualquier intento), idempotentes por id de intento; bono de 20 una vez por estudiante y categoría (clave determinística); categoría completada = una partida con las 10 preguntas resueltas (distinto de "aprobada"); cada interacción suma como máximo 60 s al día; sin tiempo diario, no hay partidas nuevas y la partida en curso se cierra como abandonada (motivo `limite_diario`); pasada la ventana de 10 min sin actividad, cualquier acceso cierra la partida (`ventana_vencida`); una sola partida en curso por estudiante.
+- Preguntas: banco primero, luego generadas por reglas (`reglas_generacion_preguntas.parametros`); instantánea y clave guardadas en el servidor.
+- Verificación manual (script temporal, sin añadir a pruebas): 67/67 correctas contra Neon; contenido y datos de prueba borrados.
+- Contenido: `database/migraciones/002_contenido_inicial.sql` (4 categorías de Matemáticas + 10 preguntas [PRUEBA] de Lenguaje). NO aplicado en Neon (pendiente de autorización).
+- Pendiente: modo invitado, estadísticas (`/estudiantes/yo/progreso|estadisticas|puntos|logros`, `/aulas/{id}/estadisticas`), contenido de Sociales y Naturales (requiere pensum).
+
+## Modo invitado y pruebas automatizadas (2026-10-14)
+**Implementado**
+- `POST /api/v1/sesiones-juego` (crea o reutiliza la sesión; cookie `genios_invitado` HttpOnly, el token no viaja en el cuerpo y en BD solo está su hash) y `GET /api/v1/sesiones-juego/yo` (partidas válidas, las que cuentan, `invitarARegistrarse`, aviso de progreso anónimo).
+- Las partidas aceptan como propietario un estudiante o una sesión de invitado (`Propietario`). Invitados: sin límite diario, sin transacciones de puntos ni progreso de cuenta; los puntos solo constan en la partida.
+- Regla de invitación: 3 partidas completadas (10 preguntas) que superen el 61 % al primer intento (≥ 7/10); las incompletas no cuentan; se acumulan entre días y materias. Interpretación PROPUESTA: basta con tener tres que cuenten (no importa si hubo otras válidas por debajo del 61 %).
+- Sesión de invitado: vigencia absoluta de 30 días (`Juego:DiasVigenciaInvitado`); al vencer pasa a `expirada` y la cookie deja de servir. Las operaciones que modifican datos exigen la cabecera `X-GENIOS-CSRF`.
+- Registrarse NO transfiere nada: la cuenta nueva empieza vacía.
+- Progresión de categorías (bloqueo por categoría anterior sin completar) en servidor y en `GET /niveles/{id}/categorias` (ahora requiere estudiante o invitado).
+
+**Pruebas ejecutadas (`dotnet test`, contra Neon real, exit code 0):** 31 unitarias + 18 de integración = 49 correctas, 0 con error. Duración de integración ≈ 2,6 min.
+- Unitarias: regla del 61 %, puntos, porcentaje, normalización de usuario y código de aula, generador de operaciones (500 operaciones por tipo: sin negativos, división exacta, 4 opciones distintas, correcta incluida).
+- Integración: salud (4); sesión de invitado (cookie HttpOnly sin token en cuerpo, reutilización, anti-CSRF, expiración, nueva sesión vacía); propiedad de partidas (invitado/invitado/estudiante); idempotencia (respuesta y creación de partida); regla de invitación completa (7/10 sí, 6/10 no, incompleta no, acumulación entre días y materias, tercera dispara la invitación); registro sin transferencia; bloqueo de categorías; puntos y bono único; límite diario; mecha (2 s en pruebas) y no reanudar; ventana de reanudación.
+- Las pruebas crean su propio contenido con etiqueta única y borran solo lo suyo; tras la ejecución Neon quedó con 0 filas de prueba (comprobado).
+- Reproducir: `cd backend; dotnet test GENIOS.sln` (requiere `.env` con la cadena de conexión).
+
+**No cubierto por pruebas automáticas:** login con Google real (falta Client ID), restablecimiento de contraseña y aulas (verificados a mano en la fase anterior, 48/48; sin script automatizado).
+
+## Contenido educativo
+Ver `docs/contenido-inicial.md`. `002_contenido_inicial.sql` es idempotente (comprobado en seco) y sigue SIN aplicar en Neon.
+
+## Siguiente paso
+Aprobación del informe de Fase 0 y entrega segura de la cadena de conexión.

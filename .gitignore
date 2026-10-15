@@ -1,0 +1,14 @@
+﻿.env
+.env.*
+!.env.example
+**/appsettings.*.local.json
+bin/
+obj/
+.dart_tool/
+build/
+
+# Certificados locales (solo la raiz publica para psql; no hace falta versionarlos)
+certs/
+*.pem
+*.key
+*.pfx
