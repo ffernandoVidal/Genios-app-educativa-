@@ -8,9 +8,11 @@ lib/
   app/          app, rutas (go_router), tema espacial, configuración
   core/         cliente HTTP (cookies, anti-CSRF, renovación, Problem Details), sesión, estados y widgets comunes
   features/
-    acceso/     bienvenida, invitado, inicio de sesión de estudiante   (dominio / datos / presentación)
-    catalogo/   universo de materias y mapa de misiones con estados     (dominio / datos / presentación)
-test/           cliente HTTP, repositorio, cubits y flujos de pantallas (con repositorios falsos)
+    acceso/     bienvenida, invitado, inicio de sesión y registro con código de aula   (dominio / datos / presentación)
+    catalogo/   universo de materias y mapa de misiones con estados                      (dominio / datos / presentación)
+    partida/    misión de 10 preguntas: respuesta, retroalimentación, mecha y resultado  (dominio / datos / presentación)
+    progreso/   insignias de puntos y tiempo, y pantalla "Mi progreso"                   (dominio / datos / presentación)
+test/           cliente HTTP, repositorios, cubits y flujos de pantallas (con repositorios falsos en test/soporte)
 ```
 Estado con `flutter_bloc` (Cubit); un repositorio por *feature* detrás de una interfaz.
 

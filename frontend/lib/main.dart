@@ -7,6 +7,8 @@ import 'core/red/cliente_api.dart';
 import 'core/sesion/sesion_app.dart';
 import 'features/acceso/datos/repositorio_acceso_api.dart';
 import 'features/catalogo/datos/repositorio_catalogo_api.dart';
+import 'features/partida/datos/repositorio_partida_api.dart';
+import 'features/progreso/datos/repositorio_progreso_api.dart';
 
 void main() {
   final sesion = SesionApp();
@@ -23,6 +25,8 @@ void main() {
       sesion: sesion,
       repositorioAcceso: RepositorioAccesoApi(cliente),
       repositorioCatalogo: RepositorioCatalogoApi(cliente),
+      repositorioPartida: RepositorioPartidaApi(cliente),
+      repositorioProgreso: RepositorioProgresoApi(cliente),
     ),
   );
 }

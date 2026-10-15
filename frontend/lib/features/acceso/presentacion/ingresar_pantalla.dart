@@ -18,6 +18,14 @@ class _IngresarPantallaState extends State<IngresarPantalla> {
   final _contrasena = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<AccesoCubit>().limpiarError();
+    });
+  }
+
+  @override
   void dispose() {
     _usuario.dispose();
     _contrasena.dispose();

@@ -14,11 +14,33 @@ class RepositorioAccesoApi implements RepositorioAcceso {
     String nombreUsuario,
     String contrasena,
   ) async {
-    final datos = await _api.enviar(
-      '/autenticacion/estudiante/iniciar-sesion',
-      {'nombreUsuario': nombreUsuario, 'contrasena': contrasena},
-    ) as Map<String, dynamic>;
+    return _resultado(
+      await _api.enviar('/autenticacion/estudiante/iniciar-sesion', {
+        'nombreUsuario': nombreUsuario,
+        'contrasena': contrasena,
+      }),
+    );
+  }
 
+  @override
+  Future<ResultadoAcceso> registrarEstudiante({
+    required String codigoAula,
+    required String nombreMostrar,
+    required String nombreUsuario,
+    required String contrasena,
+  }) async {
+    return _resultado(
+      await _api.enviar('/estudiantes/registro', {
+        'codigoAula': codigoAula,
+        'nombreMostrar': nombreMostrar,
+        'nombreUsuario': nombreUsuario,
+        'contrasena': contrasena,
+      }),
+    );
+  }
+
+  ResultadoAcceso _resultado(dynamic respuesta) {
+    final datos = respuesta as Map<String, dynamic>;
     final usuario = datos['usuario'] as Map<String, dynamic>;
     return ResultadoAcceso(
       tokenAcceso: datos['tokenAcceso'] as String,

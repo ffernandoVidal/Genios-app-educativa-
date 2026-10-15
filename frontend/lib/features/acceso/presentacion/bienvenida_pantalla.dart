@@ -75,6 +75,14 @@ class BienvenidaPantalla extends StatelessWidget {
                         icon: const Icon(Icons.login_rounded),
                         label: const Text('Ya tengo mi usuario'),
                       ),
+                      const SizedBox(height: 16),
+                      TextButton.icon(
+                        onPressed: estado.ocupado
+                            ? null
+                            : () => context.push('/registro'),
+                        icon: const Icon(Icons.meeting_room_rounded),
+                        label: const Text('Tengo un código de aula'),
+                      ),
                       if (estado.mensajeError != null) ...[
                         const SizedBox(height: 20),
                         Semantics(

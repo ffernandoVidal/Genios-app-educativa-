@@ -45,6 +45,38 @@ class AccesoCubit extends Cubit<EstadoAcceso> {
     });
   }
 
+  Future<void> registrar({
+    required String codigoAula,
+    required String nombreMostrar,
+    required String nombreUsuario,
+    required String contrasena,
+  }) async {
+    if (codigoAula.trim().isEmpty ||
+        nombreMostrar.trim().isEmpty ||
+        nombreUsuario.trim().isEmpty ||
+        contrasena.isEmpty) {
+      emit(const EstadoAcceso(mensajeError: 'Completa todos los datos.'));
+      return;
+    }
+    await _ejecutar(() async {
+      final resultado = await _repositorio.registrarEstudiante(
+        codigoAula: codigoAula.trim(),
+        nombreMostrar: nombreMostrar.trim(),
+        nombreUsuario: nombreUsuario.trim(),
+        contrasena: contrasena,
+      );
+      _sesion.iniciarCuenta(
+        tokenAcceso: resultado.tokenAcceso,
+        roles: resultado.roles,
+      );
+    });
+  }
+
+  /// Las pantallas de acceso comparten este Cubit: al abrirlas se borra el mensaje de la anterior.
+  void limpiarError() {
+    if (state.mensajeError != null) emit(const EstadoAcceso());
+  }
+
   /// Cierra la sesión. Si el servidor no responde, igual se sale de la app: el token vence solo.
   Future<void> salir() async {
     if (_sesion.tieneCuenta) {
@@ -67,7 +99,11 @@ class AccesoCubit extends Cubit<EstadoAcceso> {
     }
   }
 
-  String _traducir(ExcepcionApi e) => e.codigo == 'credenciales_invalidas'
-      ? 'Usuario o contraseña incorrectos.'
-      : e.mensaje;
+  String _traducir(ExcepcionApi e) => switch (e.codigo) {
+    'credenciales_invalidas' => 'Usuario o contraseña incorrectos.',
+    'aula_no_encontrada' =>
+      'No encontramos ese código de aula. Revisa que esté bien escrito.',
+    'nombre_usuario_en_uso' => 'Ese usuario ya existe. Prueba con otro.',
+    _ => e.mensaje,
+  };
 }

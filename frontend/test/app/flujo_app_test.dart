@@ -13,6 +13,8 @@ Future<SesionApp> abrir(
   WidgetTester t, {
   FalsoAcceso? acceso,
   FalsoCatalogo? catalogo,
+  FalsoPartida? partida,
+  FalsoProgreso? progreso,
   SesionApp? sesion,
 }) async {
   final s = sesion ?? SesionApp();
@@ -22,6 +24,8 @@ Future<SesionApp> abrir(
       repositorioAcceso: acceso ?? FalsoAcceso(),
       repositorioCatalogo:
           catalogo ?? FalsoCatalogo(mapas: {1: mapaDeMatematicas()}),
+      repositorioPartida: partida ?? FalsoPartida(),
+      repositorioProgreso: progreso ?? FalsoProgreso(),
     ),
   );
   await t.pumpAndSettle();
@@ -58,7 +62,7 @@ void main() {
         expect(find.text('Tu universo'), findsOneWidget);
         for (final nombre in [
           'Matemáticas',
-          'Lenguaje',
+          'Comunicación y Lenguaje',
           'Ciencias Sociales',
           'Ciencias Naturales',
         ]) {
@@ -197,10 +201,7 @@ void main() {
         expect(find.text('En progreso'), findsOneWidget);
         expect(find.text('Bloqueada'), findsOneWidget);
         expect(find.text('Disponible'), findsOneWidget);
-        expect(
-          find.text('Completa «Restas» para desbloquearla.'),
-          findsOneWidget,
-        );
+        expect(find.text('Completa «Restas»'), findsOneWidget);
       },
     );
 
@@ -222,7 +223,7 @@ void main() {
         await abrir(t, catalogo: catalogo);
         await entrarComoInvitado(t);
 
-        await t.tap(find.text('Lenguaje'));
+        await t.tap(find.text('Comunicación y Lenguaje'));
         await t.pumpAndSettle();
 
         expect(

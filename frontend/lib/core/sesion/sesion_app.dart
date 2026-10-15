@@ -41,3 +41,12 @@ class SesionApp extends ChangeNotifier {
     notifyListeners();
   }
 }
+
+/// Vista de solo lectura del modo de sesión, para inyectar en los Cubits sin exponer el `ChangeNotifier`.
+class FuenteModoSesion {
+  const FuenteModoSesion(this._sesion);
+
+  final SesionApp _sesion;
+
+  ModoSesion get modo => _sesion.modo;
+}

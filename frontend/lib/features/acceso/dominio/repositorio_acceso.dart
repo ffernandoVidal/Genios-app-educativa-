@@ -14,5 +14,13 @@ abstract class RepositorioAcceso {
     String contrasena,
   );
 
+  /// Crea la cuenta de un estudiante con el código de aula. La cuenta empieza vacía: no hereda nada del invitado.
+  Future<ResultadoAcceso> registrarEstudiante({
+    required String codigoAula,
+    required String nombreMostrar,
+    required String nombreUsuario,
+    required String contrasena,
+  });
+
   Future<void> cerrarSesion();
 }

@@ -5,7 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../../core/estado/estado_carga.dart';
 import '../../../core/widgets/fondo_espacial.dart';
 import '../../../core/widgets/vistas_estado.dart';
+import '../../../core/sesion/sesion_app.dart';
 import '../../acceso/presentacion/acceso_cubit.dart';
+import '../../progreso/dominio/repositorio_progreso.dart';
+import '../../progreso/presentacion/insignias_jugador.dart';
+import '../../progreso/presentacion/progreso_cubits.dart';
 import '../dominio/modelos_catalogo.dart';
 import '../dominio/repositorio_catalogo.dart';
 import 'catalogo_cubits.dart';
@@ -17,13 +21,27 @@ class UniversoPantalla extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) =>
-          UniversoCubit(context.read<RepositorioCatalogo>())..cargar(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (c) => UniversoCubit(c.read<RepositorioCatalogo>())..cargar(),
+        ),
+        BlocProvider(
+          create: (c) => ResumenJugadorCubit(
+            c.read<RepositorioProgreso>(),
+            c.read<FuenteModoSesion>(),
+          )..cargar(),
+        ),
+      ],
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Tu universo'),
           actions: [
+            IconButton(
+              tooltip: 'Mi progreso',
+              icon: const Icon(Icons.insights_rounded),
+              onPressed: () => context.push('/progreso'),
+            ),
             IconButton(
               tooltip: 'Salir',
               icon: const Icon(Icons.logout_rounded),
@@ -66,16 +84,30 @@ class _Planetas extends StatelessWidget {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 1000),
-        child: GridView.builder(
-          padding: const EdgeInsets.all(20),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 300,
-            mainAxisExtent: 270,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-          ),
-          itemCount: asignaturas.length,
-          itemBuilder: (context, i) => _Planeta(asignatura: asignaturas[i]),
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 8, 20, 0),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: InsigniasJugador(),
+              ),
+            ),
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.all(20),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 300,
+                  mainAxisExtent: 270,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                ),
+                itemCount: asignaturas.length,
+                itemBuilder: (context, i) =>
+                    _Planeta(asignatura: asignaturas[i]),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -90,7 +122,7 @@ class _Planeta extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final estilo = EstiloMateria.de(asignatura.codigo);
-    final nombre = estilo.nombre ?? asignatura.nombre;
+    final nombre = EstiloMateria.nombreVisible(asignatura.nombre);
     return Semantics(
       button: true,
       label: 'Planeta $nombre. Toca para ver sus misiones.',
@@ -134,11 +166,17 @@ class _Planeta extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  nombre,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                // Flexible: si el nombre es largo o el texto está ampliado, se recorta en vez de desbordar
+                // (el nombre completo sigue disponible para lectores de pantalla en la etiqueta semántica).
+                Flexible(
+                  child: Text(
+                    nombre,
+                    textAlign: TextAlign.center,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
