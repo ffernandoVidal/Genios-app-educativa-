@@ -437,6 +437,15 @@ class FalsoDocente implements RepositorioDocente {
   Future<List<EstudianteDeAula>> estudiantes(String aulaId) async =>
       List.of(_estudiantes[aulaId] ?? []);
 
+  List<FilaRanking> filasRanking = const [];
+  final List<(String?, int?)> consultasRanking = [];
+
+  @override
+  Future<List<FilaRanking>> ranking({String? aulaId, int? asignaturaId}) async {
+    consultasRanking.add((aulaId, asignaturaId));
+    return filasRanking;
+  }
+
   @override
   Future<CodigoActivacion> agregarEstudiante(
     String aulaId, {

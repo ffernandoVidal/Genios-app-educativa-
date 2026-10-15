@@ -17,6 +17,11 @@ public class AulasController(IServicioAulas aulas, IServicioAutenticacion autent
     public async Task<ActionResult<EstadisticasAulaDto>> Estadisticas(Guid aulaId, CancellationToken ct) =>
         await estadisticas.ObtenerEstadisticasAulaAsync(UsuarioId, aulaId, Contexto, ct);
 
+    [HttpGet("ranking")]
+    [Authorize(Roles = CodigosRol.Docente)]
+    public async Task<ActionResult<RankingDto>> Ranking([FromQuery] Guid? aulaId, [FromQuery] long? asignaturaId, CancellationToken ct) =>
+        await estadisticas.ObtenerRankingAsync(UsuarioId, aulaId, asignaturaId, Contexto, ct);
+
     [HttpPost]
     [Authorize(Roles = CodigosRol.Docente)]
     public async Task<ActionResult<AulaDto>> Crear(SolicitudCrearAula solicitud, CancellationToken ct) =>

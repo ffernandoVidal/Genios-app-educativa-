@@ -87,14 +87,14 @@ class _RegistroPantallaState extends State<RegistroPantalla> {
             const SizedBox(height: Espaciado.m),
             CampoGenios(
               controlador: _usuario,
-              etiqueta: 'Inventa tu usuario',
+              etiqueta: 'Tu usuario: sin espacios, solo letras, números, . o _',
               icono: Icons.person_rounded,
               habilitado: !estado.ocupado,
             ),
             const SizedBox(height: Espaciado.m),
             CampoGenios(
               controlador: _contrasena,
-              etiqueta: 'Inventa tu contraseña',
+              etiqueta: 'Tu contraseña (mínimo 6 caracteres)',
               icono: Icons.lock_rounded,
               habilitado: !estado.ocupado,
               oculto: true,

@@ -13,6 +13,7 @@ El cliente web debe enviar credenciales (cookies) y el origen debe estar en `Cor
 | `POST /autenticacion/renovar` | cookie renovación | rota el refresh token |
 | `POST /autenticacion/cerrar-sesion` | cookie renovación | revoca la familia de tokens |
 | `GET /usuarios/yo` | Bearer | id, nombre, roles |
+| `GET /aulas/ranking?aulaId=&asignaturaId=` | docente | Ranking por puntos de los estudiantes activos de **sus** aulas (aula y materia opcionales; empates comparten posición; máx. 200; aula ajena → 404 + auditoría). Un estudiante en varias aulas del docente aparece una vez, con la lista de aulas |
 | `POST /aulas/{aulaId}/estudiantes` | docente dueño del aula | `{nombreMostrar, nombreUsuario}` → `{id, nombreMostrar, nombreUsuario, codigoActivacion, expiraEn}`. Crea la cuenta del estudiante en el aula con una clave aleatoria desconocida (la tabla exige hash) y `debe_cambiar_contrasena=true`; el estudiante elige su contraseña con `POST /estudiantes/restablecimiento-confirmar`. Errores: 404 aula ajena, 409 usuario repetido, 400 usuario inválido |
 | `POST /estudiantes/registro` | público | `{codigoAula?, nombreUsuario, contrasena, nombreMostrar}`; **`codigoAula` es opcional** (sin él la cuenta queda sin aula; se une después con `POST /aulas/unirse`) |
 | `POST /estudiantes/validar-codigo-aula` | público | `{codigoAula}` → nombre del aula |

@@ -42,7 +42,8 @@ public record PuntosEstudianteDto(
 
 // ------------------------------------------------------------------ Aula (docente)
 
-public record AsignaturaResumenDto(string Asignatura, int PartidasCompletadas, decimal PorcentajeAciertos);
+public record AsignaturaResumenDto(
+    string Asignatura, int PartidasCompletadas, decimal PorcentajeAciertos, long AsignaturaId = 0, long Puntos = 0);
 
 public record EstudianteEstadisticasDto(
     Guid EstudianteId, string NombreMostrar, string? NombreUsuario, int PartidasCompletadas, int PreguntasEvaluadas,
@@ -52,3 +53,12 @@ public record EstudianteEstadisticasDto(
 public record EstadisticasAulaDto(
     Guid AulaId, string Nombre, int TotalEstudiantes, int PartidasCompletadas, decimal PorcentajeAciertosPromedio,
     IReadOnlyList<EstudianteEstadisticasDto> Estudiantes);
+
+// ------------------------------------------------------------------ Ranking (docente)
+
+/// <summary>Estudiantes con empate en puntos comparten posición. Un estudiante en varias aulas del docente aparece una vez.</summary>
+public record FilaRankingDto(
+    int Posicion, Guid EstudianteId, string NombreMostrar, string? NombreUsuario, IReadOnlyList<string> Aulas,
+    long Puntos, int PartidasCompletadas, decimal PorcentajeAciertos);
+
+public record RankingDto(Guid? AulaId, long? AsignaturaId, IReadOnlyList<FilaRankingDto> Filas);

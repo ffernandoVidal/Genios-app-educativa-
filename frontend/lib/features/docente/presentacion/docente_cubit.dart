@@ -2,6 +2,8 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/red/excepcion_api.dart';
+import '../../catalogo/dominio/modelos_catalogo.dart';
+import '../../catalogo/dominio/repositorio_catalogo.dart';
 import '../dominio/repositorio_docente.dart';
 
 class EstadoDocente extends Equatable {
@@ -15,6 +17,11 @@ class EstadoDocente extends Equatable {
     this.errorCarga,
     this.mensajeError,
     this.codigo,
+    this.materias = const [],
+    this.ranking = const [],
+    this.cargandoRanking = false,
+    this.filtroAulaId,
+    this.filtroMateriaId,
   });
 
   final bool cargando;
@@ -31,6 +38,15 @@ class EstadoDocente extends Equatable {
   /// Último código de activación emitido: el docente se lo entrega al estudiante.
   final CodigoActivacion? codigo;
 
+  /// Materias disponibles para filtrar el ranking.
+  final List<Asignatura> materias;
+  final List<FilaRanking> ranking;
+  final bool cargandoRanking;
+
+  /// Filtros del ranking: null = todas mis aulas / todas las materias.
+  final String? filtroAulaId;
+  final int? filtroMateriaId;
+
   EstadoDocente copiar({
     bool? cargando,
     List<AulaDocente>? aulas,
@@ -42,6 +58,12 @@ class EstadoDocente extends Equatable {
     String? mensajeError,
     CodigoActivacion? codigo,
     bool quitarCodigo = false,
+    List<Asignatura>? materias,
+    List<FilaRanking>? ranking,
+    bool? cargandoRanking,
+    String? filtroAulaId,
+    int? filtroMateriaId,
+    bool conFiltros = false,
   }) => EstadoDocente(
     cargando: cargando ?? this.cargando,
     aulas: aulas ?? this.aulas,
@@ -52,6 +74,11 @@ class EstadoDocente extends Equatable {
     errorCarga: errorCarga,
     mensajeError: mensajeError,
     codigo: quitarCodigo ? null : (codigo ?? this.codigo),
+    materias: materias ?? this.materias,
+    ranking: ranking ?? this.ranking,
+    cargandoRanking: cargandoRanking ?? this.cargandoRanking,
+    filtroAulaId: conFiltros ? filtroAulaId : this.filtroAulaId,
+    filtroMateriaId: conFiltros ? filtroMateriaId : this.filtroMateriaId,
   );
 
   @override
@@ -65,21 +92,35 @@ class EstadoDocente extends Equatable {
     errorCarga,
     mensajeError,
     codigo,
+    materias,
+    ranking,
+    cargandoRanking,
+    filtroAulaId,
+    filtroMateriaId,
   ];
 }
 
 class DocenteCubit extends Cubit<EstadoDocente> {
-  DocenteCubit(this._repositorio) : super(const EstadoDocente());
+  DocenteCubit(this._repositorio, this._catalogo)
+    : super(const EstadoDocente());
 
   final RepositorioDocente _repositorio;
+  final RepositorioCatalogo _catalogo;
 
   Future<void> cargar() async {
     emit(const EstadoDocente());
     try {
       final aulas = await _repositorio.aulas();
       if (isClosed) return;
-      emit(EstadoDocente(cargando: false, aulas: aulas));
+      List<Asignatura> materias = const [];
+      try {
+        materias = await _catalogo.asignaturas();
+      } on ExcepcionApi {
+        // Sin materias solo se pierde el filtro por materia.
+      }
+      emit(EstadoDocente(cargando: false, aulas: aulas, materias: materias));
       if (aulas.isNotEmpty) await elegirAula(aulas.first);
+      await filtrarRanking();
     } on ExcepcionApi catch (e) {
       if (!isClosed) {
         emit(EstadoDocente(cargando: false, errorCarga: e.mensaje));
@@ -106,6 +147,35 @@ class DocenteCubit extends Cubit<EstadoDocente> {
     } on ExcepcionApi catch (e) {
       if (!isClosed) {
         emit(state.copiar(cargandoEstudiantes: false, mensajeError: e.mensaje));
+      }
+    }
+  }
+
+  /// Recalcula el ranking en el servidor con los filtros dados (null = sin filtro).
+  Future<void> filtrarRanking({
+    String? aulaId,
+    int? materiaId,
+    bool conservar = false,
+  }) async {
+    final aula = conservar ? state.filtroAulaId : aulaId;
+    final materia = conservar ? state.filtroMateriaId : materiaId;
+    emit(
+      state.copiar(
+        cargandoRanking: true,
+        filtroAulaId: aula,
+        filtroMateriaId: materia,
+        conFiltros: true,
+      ),
+    );
+    try {
+      final filas = await _repositorio.ranking(
+        aulaId: aula,
+        asignaturaId: materia,
+      );
+      if (!isClosed) emit(state.copiar(ranking: filas, cargandoRanking: false));
+    } on ExcepcionApi catch (e) {
+      if (!isClosed) {
+        emit(state.copiar(cargandoRanking: false, mensajeError: e.mensaje));
       }
     }
   }
@@ -158,6 +228,7 @@ class DocenteCubit extends Cubit<EstadoDocente> {
             codigo: codigo,
           ),
         );
+        await filtrarRanking(conservar: true);
       }
     } on ExcepcionApi catch (e) {
       if (!isClosed) {

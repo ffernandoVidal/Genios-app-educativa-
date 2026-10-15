@@ -19,14 +19,54 @@ class RepositorioDocenteApi implements RepositorioDocente {
 
   @override
   Future<List<EstudianteDeAula>> estudiantes(String aulaId) async {
-    final datos =
-        await _api.obtener('/aulas/$aulaId/estudiantes') as List<dynamic>;
-    return datos.map((e) {
+    final datos = await _api.obtener(
+      '/aulas/$aulaId/estadisticas',
+    ) as Map<String, dynamic>;
+    return (datos['estudiantes'] as List<dynamic>).map((e) {
       final j = e as Map<String, dynamic>;
       return EstudianteDeAula(
-        id: j['id'] as String,
+        id: j['estudianteId'] as String,
         nombreMostrar: j['nombreMostrar'] as String,
         nombreUsuario: j['nombreUsuario'] as String?,
+        partidas: j['partidasCompletadas'] as int,
+        porcentajeAciertos: (j['porcentajeAciertos'] as num).toDouble(),
+        puntos: (j['puntosTotales'] as num).toInt(),
+        ultimaActividad: j['ultimaActividadEn'] == null
+            ? null
+            : DateTime.parse(j['ultimaActividadEn'] as String),
+        porMateria: (j['porAsignatura'] as List<dynamic>).map((m) {
+          final x = m as Map<String, dynamic>;
+          return ResumenMateria(
+            asignaturaId: (x['asignaturaId'] as num).toInt(),
+            nombre: x['asignatura'] as String,
+            partidas: x['partidasCompletadas'] as int,
+            porcentajeAciertos: (x['porcentajeAciertos'] as num).toDouble(),
+            puntos: (x['puntos'] as num).toInt(),
+          );
+        }).toList(),
+      );
+    }).toList();
+  }
+
+  @override
+  Future<List<FilaRanking>> ranking({String? aulaId, int? asignaturaId}) async {
+    final consulta = [
+      if (aulaId != null) 'aulaId=$aulaId',
+      if (asignaturaId != null) 'asignaturaId=$asignaturaId',
+    ].join('&');
+    final datos = await _api.obtener(
+      '/aulas/ranking${consulta.isEmpty ? '' : '?$consulta'}',
+    ) as Map<String, dynamic>;
+    return (datos['filas'] as List<dynamic>).map((f) {
+      final j = f as Map<String, dynamic>;
+      return FilaRanking(
+        posicion: j['posicion'] as int,
+        nombreMostrar: j['nombreMostrar'] as String,
+        nombreUsuario: j['nombreUsuario'] as String?,
+        aulas: (j['aulas'] as List<dynamic>).cast<String>(),
+        puntos: (j['puntos'] as num).toInt(),
+        partidas: j['partidasCompletadas'] as int,
+        porcentajeAciertos: (j['porcentajeAciertos'] as num).toDouble(),
       );
     }).toList();
   }

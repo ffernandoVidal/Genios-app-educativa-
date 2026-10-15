@@ -136,3 +136,9 @@ Recorrido: Bienvenida → (invitado: solo apodo) → Cabina → JUGAR → Materi
 - Backend: `POST /aulas/{aulaId}/estudiantes` (sin migración). La restricción `ck_usuarios_credenciales` exige hash para cuentas de usuario/contraseña, por eso se guarda el hash de una clave aleatoria y el estudiante la reemplaza con su código en `/activar` («Tengo un código de mi docente»).
 - Pruebas: backend +3 (alta, ajeno/estudiante, duplicado/inválido); front +8 (panel, activación). No existe aún: retirar estudiantes en la UI (el endpoint sí), estadísticas del aula en el panel.
 - Banco educativo V2 (370 preguntas): **solo Fase 1 (auditoría)**; los JSON están en `data/educational/` (fuera de los assets de Flutter). Nada importado ni migrado.
+
+## Panel docente: estadísticas y ranking (2026-10-15)
+- Por estudiante del aula (desde `GET /aulas/{id}/estadisticas`): puntos, % de aciertos al primer intento, partidas, última actividad y desglose **por materia** (ahora con `asignaturaId` y `puntos`). «Cambiar contraseña» emite un código de un solo uso (el docente nunca ve ni fija contraseñas).
+- Ranking (`GET /aulas/ranking`) con filtros por aula y por materia, calculado en el servidor.
+- Pruebas: backend +4 (ranking: orden, filtros, empates/duplicados, permisos); front 135 en total. La prueba del bono de categoría se volvió independiente de otros estudiantes (compartían categoría).
+- Pendiente: nada de esto se ha visto con datos reales (Neon sin contenido; con datos solo en pruebas); filtro por materia en la lista de estudiantes (hoy el desglose está al abrir cada uno).

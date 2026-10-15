@@ -42,7 +42,7 @@ void main() {
       expect(find.text('Panel docente'), findsOneWidget);
       expect(find.text('K4821'), findsOneWidget);
       expect(find.text('Ana'), findsOneWidget);
-      expect(find.text('Usuario: ana.luz'), findsOneWidget);
+      expect(find.textContaining('Usuario: ana.luz'), findsOneWidget);
       expect(find.text('JUGAR'), findsNothing);
     });
 
@@ -78,7 +78,7 @@ void main() {
         expect(docente.ultimoUsuarioAgregado, 'beto.2');
         expect(find.text('ABCD2345'), findsOneWidget);
         expect(find.text('Beto'), findsOneWidget);
-        expect(find.text('Estudiantes (1)'), findsOneWidget);
+        expect(find.text('Estudiantes de «5.º A» (1)'), findsOneWidget);
       },
     );
 
@@ -122,8 +122,11 @@ void main() {
       await abrirApp(t, docente: docente);
       await entrarComoDocente(t);
 
-      await t.ensureVisible(find.text('Nuevo código'));
-      await t.tap(find.text('Nuevo código'));
+      await t.ensureVisible(find.text('Ana'));
+      await t.tap(find.text('Ana'));
+      await t.pumpAndSettle();
+      await t.ensureVisible(find.text('CAMBIAR CONTRASEÑA'));
+      await t.tap(find.text('CAMBIAR CONTRASEÑA'));
       await t.pumpAndSettle();
       expect(docente.codigosNuevos, 1);
       expect(find.text('NUEVO9876'), findsOneWidget);
@@ -146,6 +149,161 @@ void main() {
         expect(find.text('JUGAR'), findsOneWidget);
       },
     );
+  });
+
+  group('estadísticas y ranking', () {
+    const ana = EstudianteDeAula(
+      id: 'e1',
+      nombreMostrar: 'Ana',
+      nombreUsuario: 'ana.luz',
+      partidas: 3,
+      porcentajeAciertos: 80,
+      puntos: 340,
+      porMateria: [
+        ResumenMateria(
+          asignaturaId: 1,
+          nombre: 'Matematicas',
+          partidas: 2,
+          porcentajeAciertos: 85,
+          puntos: 240,
+        ),
+        ResumenMateria(
+          asignaturaId: 2,
+          nombre: 'Lenguaje',
+          partidas: 1,
+          porcentajeAciertos: 70.5,
+          puntos: 100,
+        ),
+      ],
+    );
+
+    testWidgets(
+      'cada estudiante muestra sus cifras y, al abrirlo, el detalle por materia',
+      (t) async {
+        final docente = FalsoDocente(
+          aulas: [_aula],
+          estudiantes: {
+            'a1': [ana],
+          },
+        );
+        await abrirApp(t, docente: docente);
+        await entrarComoDocente(t);
+
+        expect(
+          find.textContaining('340 puntos · 80 % aciertos · 3 partidas'),
+          findsOneWidget,
+        );
+        await t.ensureVisible(find.text('Ana'));
+        await t.tap(find.text('Ana'));
+        await t.pumpAndSettle();
+        expect(
+          find.textContaining(
+            'Matemáticas: 2 partidas · 85 % aciertos · 240 puntos',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining(
+            'Comunicación y Lenguaje: 1 partidas · 70.5 % aciertos · 100 puntos',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('CAMBIAR CONTRASEÑA'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'cambiar la contraseña emite un código nuevo para ese estudiante',
+      (t) async {
+        final docente = FalsoDocente(
+          aulas: [_aula],
+          estudiantes: {
+            'a1': [ana],
+          },
+        );
+        await abrirApp(t, docente: docente);
+        await entrarComoDocente(t);
+
+        await t.ensureVisible(find.text('Ana'));
+        await t.tap(find.text('Ana'));
+        await t.pumpAndSettle();
+        await t.ensureVisible(find.text('CAMBIAR CONTRASEÑA'));
+        await t.tap(find.text('CAMBIAR CONTRASEÑA'));
+        await t.pumpAndSettle();
+        expect(docente.codigosNuevos, 1);
+        expect(find.text('NUEVO9876'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'el ranking se pide al servidor y muestra posiciones y puntos',
+      (t) async {
+        final docente = FalsoDocente(aulas: [_aula])
+          ..filasRanking = const [
+            FilaRanking(
+              posicion: 1,
+              nombreMostrar: 'Ana',
+              nombreUsuario: 'ana',
+              aulas: ['5.º A'],
+              puntos: 340,
+              partidas: 3,
+              porcentajeAciertos: 80,
+            ),
+            FilaRanking(
+              posicion: 2,
+              nombreMostrar: 'Beto',
+              nombreUsuario: 'beto',
+              aulas: ['5.º A', '6.º B'],
+              puntos: 120,
+              partidas: 1,
+              porcentajeAciertos: 70,
+            ),
+          ];
+        await abrirApp(t, docente: docente);
+        await entrarComoDocente(t);
+
+        expect(docente.consultasRanking.first, (
+          null,
+          null,
+        )); // sin filtros: todas mis aulas y materias
+        await t.ensureVisible(find.text('Ranking de estudiantes'));
+        expect(find.text('Ranking de estudiantes'), findsOneWidget);
+        expect(find.text('340'), findsOneWidget);
+        expect(find.textContaining('5.º A, 6.º B'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'filtrar por materia y por aula vuelve a pedir el ranking con esos filtros',
+      (t) async {
+        final docente = FalsoDocente(aulas: [_aula]);
+        await abrirApp(t, docente: docente);
+        await entrarComoDocente(t);
+
+        await t.ensureVisible(find.text('Ranking de estudiantes'));
+        await t.tap(find.text('Todas las materias'));
+        await t.pumpAndSettle();
+        await t.tap(find.text('Matemáticas').last);
+        await t.pumpAndSettle();
+        expect(docente.consultasRanking.last.$2, 1);
+
+        await t.tap(find.text('Todas mis aulas'));
+        await t.pumpAndSettle();
+        await t.tap(find.text('5.º A').last);
+        await t.pumpAndSettle();
+        expect(docente.consultasRanking.last, ('a1', 1));
+      },
+    );
+
+    testWidgets('sin estudiantes el ranking lo explica', (t) async {
+      await abrirApp(t, docente: FalsoDocente(aulas: [_aula]));
+      await entrarComoDocente(t);
+      await t.ensureVisible(find.text('Ranking de estudiantes'));
+      expect(
+        find.textContaining('Todavía no hay estudiantes para mostrar'),
+        findsOneWidget,
+      );
+    });
   });
 
   group('activar cuenta con el código del docente', () {

@@ -12,6 +12,8 @@ import '../../../diseno/tokens/colores.dart';
 import '../../../diseno/tokens/medidas.dart';
 import '../../../diseno/tokens/tipografia.dart';
 import '../../acceso/presentacion/acceso_cubit.dart';
+import '../../catalogo/dominio/repositorio_catalogo.dart';
+import '../../../diseno/componentes/icono_materia.dart';
 import '../dominio/repositorio_docente.dart';
 import 'docente_cubit.dart';
 
@@ -23,7 +25,10 @@ class PanelDocentePantalla extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (c) => DocenteCubit(c.read<RepositorioDocente>())..cargar(),
+      create: (c) => DocenteCubit(
+        c.read<RepositorioDocente>(),
+        c.read<RepositorioCatalogo>(),
+      )..cargar(),
       child: const _VistaPanel(),
     );
   }
@@ -129,6 +134,10 @@ class _VistaPanelState extends State<_VistaPanel> {
                 const SizedBox(height: Espaciado.xl),
                 _ListaEstudiantes(estado: estado),
               ],
+              if (estado.aulas.isNotEmpty) ...[
+                const SizedBox(height: Espaciado.xl),
+                _SeccionRanking(estado: estado),
+              ],
               if (estado.mensajeError != null)
                 Padding(
                   padding: const EdgeInsets.only(top: Espaciado.l),
@@ -171,22 +180,23 @@ class _Bloque extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(Espaciado.l),
-      decoration: BoxDecoration(
-        color: ColoresGenios.superficie,
-        borderRadius: Radios.tarjeta,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Semantics(
-            header: true,
-            child: Text(titulo, style: Tipografia.titulo(22, peso: 800)),
-          ),
-          const SizedBox(height: Espaciado.m),
-          hijo,
-        ],
+    // Material (no un contenedor con color): los ListTile y ExpansionTile pintan su toque sobre él.
+    return Material(
+      color: ColoresGenios.superficie,
+      borderRadius: Radios.tarjeta,
+      child: Padding(
+        padding: const EdgeInsets.all(Espaciado.l),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(titulo, style: Tipografia.titulo(22, peso: 800)),
+            ),
+            const SizedBox(height: Espaciado.m),
+            hijo,
+          ],
+        ),
       ),
     );
   }
@@ -423,7 +433,8 @@ class _ListaEstudiantes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Bloque(
-      titulo: 'Estudiantes (${estado.estudiantes.length})',
+      titulo:
+          'Estudiantes de «${estado.aulaActual?.nombre ?? ''}» (${estado.estudiantes.length})',
       hijo: estado.cargandoEstudiantes
           ? const SizedBox(
               height: 100,
@@ -437,35 +448,260 @@ class _ListaEstudiantes extends StatelessWidget {
           : Column(
               children: [
                 for (final e in estado.estudiantes)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(
-                      Icons.face_rounded,
-                      color: ColoresGenios.turquesa,
-                      size: 32,
-                    ),
-                    title: Text(
-                      e.nombreMostrar,
-                      style: Tipografia.titulo(20, peso: 700),
-                    ),
-                    subtitle: Text(
-                      e.nombreUsuario == null
-                          ? ''
-                          : 'Usuario: ${e.nombreUsuario}',
-                      style: Tipografia.texto(
-                        15,
-                        color: ColoresGenios.textoSuave,
-                      ),
-                    ),
-                    trailing: TextButton(
-                      onPressed: estado.ocupado
-                          ? null
-                          : () => context.read<DocenteCubit>().nuevoCodigo(e),
-                      child: const Text('Nuevo código'),
-                    ),
-                  ),
+                  _FilaEstudiante(estudiante: e, ocupado: estado.ocupado),
               ],
             ),
+    );
+  }
+}
+
+String _fecha(DateTime? f) {
+  if (f == null) return 'Sin actividad';
+  final l = f.toLocal();
+  String dos(int n) => n.toString().padLeft(2, '0');
+  return '${dos(l.day)}/${dos(l.month)}/${l.year}';
+}
+
+String _porcentaje(double p) =>
+    '${p.toStringAsFixed(p == p.roundToDouble() ? 0 : 1)} %';
+
+class _FilaEstudiante extends StatelessWidget {
+  const _FilaEstudiante({required this.estudiante, required this.ocupado});
+
+  final EstudianteDeAula estudiante;
+  final bool ocupado;
+
+  @override
+  Widget build(BuildContext context) {
+    final e = estudiante;
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        leading: const Icon(
+          Icons.face_rounded,
+          color: ColoresGenios.turquesa,
+          size: 32,
+        ),
+        title: Text(e.nombreMostrar, style: Tipografia.titulo(20, peso: 700)),
+        subtitle: Text(
+          '${e.nombreUsuario == null ? '' : 'Usuario: ${e.nombreUsuario} · '}'
+          '${e.puntos} puntos · ${_porcentaje(e.porcentajeAciertos)} aciertos · ${e.partidas} partidas',
+          style: Tipografia.texto(15, color: ColoresGenios.textoSuave),
+        ),
+        childrenPadding: const EdgeInsets.only(bottom: Espaciado.m),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Última actividad: ${_fecha(e.ultimaActividad)}',
+            style: Tipografia.texto(16),
+          ),
+          const SizedBox(height: Espaciado.s),
+          if (e.porMateria.isEmpty)
+            Text(
+              'Todavía no ha jugado ninguna materia.',
+              style: Tipografia.texto(16, color: ColoresGenios.textoSuave),
+            )
+          else
+            for (final m in e.porMateria)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text(
+                  '${EstiloMateria.nombreVisible(m.nombre)}: ${m.partidas} partidas · ${_porcentaje(m.porcentajeAciertos)} aciertos · ${m.puntos} puntos',
+                  style: Tipografia.texto(16),
+                ),
+              ),
+          const SizedBox(height: Espaciado.s),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: BotonSecundarioJuego(
+              texto: 'CAMBIAR CONTRASEÑA',
+              icono: Icons.vpn_key_rounded,
+              alPulsar: ocupado
+                  ? null
+                  : () => context.read<DocenteCubit>().nuevoCodigo(e),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SeccionRanking extends StatelessWidget {
+  const _SeccionRanking({required this.estado});
+
+  final EstadoDocente estado;
+
+  @override
+  Widget build(BuildContext context) {
+    final cubit = context.read<DocenteCubit>();
+    return _Bloque(
+      titulo: 'Ranking de estudiantes',
+      hijo: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            spacing: Espaciado.m,
+            runSpacing: Espaciado.m,
+            children: [
+              _Filtro<String?>(
+                etiqueta: 'Aula',
+                valor: estado.filtroAulaId,
+                opciones: [
+                  const DropdownMenuItem(
+                    value: null,
+                    child: Text('Todas mis aulas'),
+                  ),
+                  for (final a in estado.aulas)
+                    DropdownMenuItem(value: a.id, child: Text(a.nombre)),
+                ],
+                alCambiar: (v) => cubit.filtrarRanking(
+                  aulaId: v,
+                  materiaId: estado.filtroMateriaId,
+                ),
+              ),
+              _Filtro<int?>(
+                etiqueta: 'Materia',
+                valor: estado.filtroMateriaId,
+                opciones: [
+                  const DropdownMenuItem(
+                    value: null,
+                    child: Text('Todas las materias'),
+                  ),
+                  for (final m in estado.materias)
+                    DropdownMenuItem(
+                      value: m.id,
+                      child: Text(EstiloMateria.nombreVisible(m.nombre)),
+                    ),
+                ],
+                alCambiar: (v) => cubit.filtrarRanking(
+                  aulaId: estado.filtroAulaId,
+                  materiaId: v,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Espaciado.l),
+          if (estado.cargandoRanking)
+            const SizedBox(
+              height: 100,
+              child: VistaCarga(mensaje: 'Calculando ranking…'),
+            )
+          else if (estado.ranking.isEmpty)
+            Text(
+              'Todavía no hay estudiantes para mostrar con estos filtros.',
+              style: Tipografia.texto(18, color: ColoresGenios.textoSuave),
+            )
+          else
+            for (final f in estado.ranking) _FilaPosicion(fila: f),
+        ],
+      ),
+    );
+  }
+}
+
+class _Filtro<T> extends StatelessWidget {
+  const _Filtro({
+    required this.etiqueta,
+    required this.valor,
+    required this.opciones,
+    required this.alCambiar,
+  });
+
+  final String etiqueta;
+  final T valor;
+  final List<DropdownMenuItem<T>> opciones;
+  final ValueChanged<T?> alCambiar;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 200, maxWidth: 300),
+      child: Semantics(
+        label: 'Filtrar por $etiqueta',
+        child: DropdownButtonFormField<T>(
+          initialValue: valor,
+          isExpanded: true,
+          decoration: InputDecoration(labelText: etiqueta),
+          items: opciones,
+          onChanged: alCambiar,
+        ),
+      ),
+    );
+  }
+}
+
+class _FilaPosicion extends StatelessWidget {
+  const _FilaPosicion({required this.fila});
+
+  final FilaRanking fila;
+
+  @override
+  Widget build(BuildContext context) {
+    final medalla = switch (fila.posicion) {
+      1 => ColoresGenios.amarilloEspacial,
+      2 => const Color(0xFFC0C8CC),
+      3 => const Color(0xFFCD7F32),
+      _ => null,
+    };
+    return Semantics(
+      label:
+          'Puesto ${fila.posicion}, ${fila.nombreMostrar}, ${fila.puntos} puntos',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: medalla ?? ColoresGenios.azulPetroleo,
+              child: Text(
+                '${fila.posicion}',
+                style: Tipografia.titulo(
+                  18,
+                  peso: 800,
+                  color: medalla == null
+                      ? ColoresGenios.blancoLunar
+                      : ColoresGenios.textoSobreClaro,
+                ),
+              ),
+            ),
+            const SizedBox(width: Espaciado.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    fila.nombreMostrar,
+                    style: Tipografia.titulo(19, peso: 700),
+                  ),
+                  Text(
+                    '${fila.aulas.join(', ')} · ${_porcentaje(fila.porcentajeAciertos)} aciertos · ${fila.partidas} partidas',
+                    style: Tipografia.texto(
+                      14,
+                      color: ColoresGenios.textoSuave,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              '${fila.puntos}',
+              style: Tipografia.titulo(
+                24,
+                peso: 800,
+                color: ColoresGenios.amarilloEspacial,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.star_rounded,
+              color: ColoresGenios.amarilloEspacial,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

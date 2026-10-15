@@ -40,6 +40,12 @@ GoRouter crearEnrutador(SesionApp sesion, {String googleClientId = ''}) {
         return '/docente';
       }
       if (sesion.activa && soloSinSesion.contains(ruta)) return '/cabina';
+      // Un estudiante o invitado con sesión no tiene nada que hacer en el acceso docente.
+      if (sesion.activa &&
+          sesion.modo != ModoSesion.docente &&
+          ruta == '/docente') {
+        return '/cabina';
+      }
       // El registro también se permite a un invitado (es la invitación a crear su cuenta).
       if (ruta == '/registro' &&
           sesion.activa &&

@@ -129,18 +129,27 @@ public class ServicioEstadisticas(GeniosDbContext bd, RegistradorAuditoria audit
             .Select(p => new
             {
                 p.UsuarioId, Asignatura = p.Categoria.NivelEducativo.Asignatura.Nombre,
+                AsignaturaId = p.Categoria.NivelEducativo.AsignaturaId,
                 p.PartidasCompletadas, p.PreguntasEvaluadas, p.AciertosPrimerIntento, p.UltimaActividadEn
             }).ToListAsync(ct);
         var puntos = await bd.TransaccionesPuntos.AsNoTracking().Where(t => ids.Contains(t.UsuarioId))
             .GroupBy(t => t.UsuarioId).Select(g => new { Id = g.Key, Total = g.Sum(t => (long)t.Puntos) })
             .ToDictionaryAsync(x => x.Id, x => x.Total, ct);
 
+        var puntosPorAsignatura = await bd.TransaccionesPuntos.AsNoTracking()
+            .Where(t => ids.Contains(t.UsuarioId) && t.Partida != null)
+            .GroupBy(t => new { t.UsuarioId, Asignatura = t.Partida!.Categoria.NivelEducativo.AsignaturaId })
+            .Select(g => new { g.Key.UsuarioId, g.Key.Asignatura, Total = g.Sum(t => (long)t.Puntos) })
+            .ToListAsync(ct);
+
         var estudiantes = miembros.Select(m =>
         {
             var propias = progreso.Where(p => p.UsuarioId == m.EstudianteId).ToList();
-            var porAsignatura = propias.GroupBy(p => p.Asignatura).OrderBy(g => g.Key)
-                .Select(g => new AsignaturaResumenDto(g.Key, g.Sum(p => p.PartidasCompletadas),
-                    ReglasJuego.PorcentajeAciertos(g.Sum(p => p.AciertosPrimerIntento), g.Sum(p => p.PreguntasEvaluadas)))).ToList();
+            var porAsignatura = propias.GroupBy(p => new { p.Asignatura, p.AsignaturaId }).OrderBy(g => g.Key.Asignatura)
+                .Select(g => new AsignaturaResumenDto(g.Key.Asignatura, g.Sum(p => p.PartidasCompletadas),
+                    ReglasJuego.PorcentajeAciertos(g.Sum(p => p.AciertosPrimerIntento), g.Sum(p => p.PreguntasEvaluadas)),
+                    g.Key.AsignaturaId,
+                    puntosPorAsignatura.Where(x => x.UsuarioId == m.EstudianteId && x.Asignatura == g.Key.AsignaturaId).Sum(x => x.Total))).ToList();
             var evaluadas = propias.Sum(p => p.PreguntasEvaluadas);
             var aciertos = propias.Sum(p => p.AciertosPrimerIntento);
             return new EstudianteEstadisticasDto(m.EstudianteId, m.NombreMostrar, m.NombreUsuario,
@@ -151,5 +160,67 @@ public class ServicioEstadisticas(GeniosDbContext bd, RegistradorAuditoria audit
         return new EstadisticasAulaDto(aula.Id, aula.Nombre, estudiantes.Count, estudiantes.Sum(e => e.PartidasCompletadas),
             ReglasJuego.PorcentajeAciertos(estudiantes.Sum(e => e.AciertosPrimerIntento), estudiantes.Sum(e => e.PreguntasEvaluadas)),
             estudiantes);
+    }
+
+    // ---------------------------------------------------------------- Ranking (docente)
+
+    private const int MaximoFilasRanking = 200;
+
+    public async Task<RankingDto> ObtenerRankingAsync(Guid docenteId, Guid? aulaId, long? asignaturaId, ContextoSolicitud contexto, CancellationToken ct)
+    {
+        var aulas = bd.Aulas.AsNoTracking().Where(a => a.DocenteId == docenteId && a.EliminadaEn == null);
+        if (aulaId is not null)
+        {
+            if (!await aulas.AnyAsync(a => a.Id == aulaId, ct))
+            {
+                await auditoria.RegistrarAsync("acceso_aula_no_autorizado", docenteId, contexto, new { aulaId });
+                throw new ExcepcionNegocio(TipoError.NoEncontrado, "aula_no_encontrada", "No se encontró el aula.");
+            }
+            aulas = aulas.Where(a => a.Id == aulaId);
+        }
+
+        // Solo estudiantes activos de las aulas del propio docente.
+        var miembros = await bd.MiembrosAula.AsNoTracking()
+            .Where(m => m.Estado == "activo" && aulas.Any(a => a.Id == m.AulaId))
+            .Select(m => new { m.EstudianteId, m.Estudiante.NombreMostrar, m.Estudiante.NombreUsuario, Aula = m.Aula.Nombre })
+            .ToListAsync(ct);
+        var ids = miembros.Select(m => m.EstudianteId).Distinct().ToList();
+
+        var progresoConsulta = bd.ProgresoEstudiante.AsNoTracking().Where(p => ids.Contains(p.UsuarioId));
+        if (asignaturaId is not null)
+            progresoConsulta = progresoConsulta.Where(p => p.Categoria.NivelEducativo.AsignaturaId == asignaturaId);
+        var progreso = await progresoConsulta
+            .Select(p => new { p.UsuarioId, p.PartidasCompletadas, p.PreguntasEvaluadas, p.AciertosPrimerIntento }).ToListAsync(ct);
+
+        var puntosConsulta = bd.TransaccionesPuntos.AsNoTracking().Where(t => ids.Contains(t.UsuarioId));
+        if (asignaturaId is not null)
+            puntosConsulta = puntosConsulta.Where(t => t.Partida != null && t.Partida.Categoria.NivelEducativo.AsignaturaId == asignaturaId);
+        var puntos = await puntosConsulta.GroupBy(t => t.UsuarioId)
+            .Select(g => new { Id = g.Key, Total = g.Sum(t => (long)t.Puntos) })
+            .ToDictionaryAsync(x => x.Id, x => x.Total, ct);
+
+        var filas = ids.Select(id =>
+        {
+            var datos = miembros.Where(m => m.EstudianteId == id).ToList();
+            var propias = progreso.Where(p => p.UsuarioId == id).ToList();
+            return new
+            {
+                Id = id, datos[0].NombreMostrar, datos[0].NombreUsuario,
+                Aulas = (IReadOnlyList<string>)datos.Select(d => d.Aula).Distinct().OrderBy(n => n).ToList(),
+                Puntos = puntos.GetValueOrDefault(id),
+                Partidas = propias.Sum(p => p.PartidasCompletadas),
+                Porcentaje = ReglasJuego.PorcentajeAciertos(propias.Sum(p => p.AciertosPrimerIntento), propias.Sum(p => p.PreguntasEvaluadas))
+            };
+        }).OrderByDescending(f => f.Puntos).ThenByDescending(f => f.Porcentaje).ThenBy(f => f.NombreMostrar).Take(MaximoFilasRanking).ToList();
+
+        var resultado = new List<FilaRankingDto>();
+        for (var i = 0; i < filas.Count; i++)
+        {
+            // Competición estándar: el mismo puntaje comparte posición.
+            var posicion = i > 0 && filas[i].Puntos == filas[i - 1].Puntos ? resultado[i - 1].Posicion : i + 1;
+            var f = filas[i];
+            resultado.Add(new FilaRankingDto(posicion, f.Id, f.NombreMostrar, f.NombreUsuario, f.Aulas, f.Puntos, f.Partidas, f.Porcentaje));
+        }
+        return new RankingDto(aulaId, asignaturaId, resultado);
     }
 }

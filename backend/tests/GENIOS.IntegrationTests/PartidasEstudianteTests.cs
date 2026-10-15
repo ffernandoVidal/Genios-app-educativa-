@@ -25,8 +25,8 @@ public class PartidasEstudianteTests(FixtureJuego f)
         Assert.Equal(100, segunda.PuntosObtenidos); // sin segundo bono
 
         var bonos = await f.Escalar<long>(
-            "select count(*) from transacciones_puntos t join partidas p on p.id = t.partida_id where p.categoria_id = @c and t.tipo_transaccion = 'bono_categoria'",
-            ("c", f.CategoriaA1));
+            "select count(*) from transacciones_puntos t join partidas p on p.id = t.partida_id where p.categoria_id = @c and t.usuario_id = @u and t.tipo_transaccion = 'bono_categoria'",
+            ("c", f.CategoriaA1), ("u", estudiante.UsuarioId!.Value)); // solo este estudiante: otras pruebas comparten la categoría
         Assert.Equal(1, bonos);
     }
 
