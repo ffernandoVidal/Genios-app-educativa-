@@ -1,5 +1,6 @@
 using GENIOS.Application.Aulas;
 using GENIOS.Application.Autenticacion;
+using GENIOS.Application.Estadisticas;
 using GENIOS.Domain.Rules;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,8 +10,13 @@ namespace GENIOS.Api.Controllers;
 
 [Route("api/v1/aulas")]
 [Authorize]
-public class AulasController(IServicioAulas aulas, IServicioAutenticacion autenticacion) : ControladorBase
+public class AulasController(IServicioAulas aulas, IServicioAutenticacion autenticacion, IServicioEstadisticas estadisticas) : ControladorBase
 {
+    [HttpGet("{aulaId:guid}/estadisticas")]
+    [Authorize(Roles = CodigosRol.Docente)]
+    public async Task<ActionResult<EstadisticasAulaDto>> Estadisticas(Guid aulaId, CancellationToken ct) =>
+        await estadisticas.ObtenerEstadisticasAulaAsync(UsuarioId, aulaId, Contexto, ct);
+
     [HttpPost]
     [Authorize(Roles = CodigosRol.Docente)]
     public async Task<ActionResult<AulaDto>> Crear(SolicitudCrearAula solicitud, CancellationToken ct) =>

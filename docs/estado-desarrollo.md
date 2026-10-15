@@ -77,5 +77,20 @@
 ## Contenido educativo
 Ver `docs/contenido-inicial.md`. `002_contenido_inicial.sql` es idempotente (comprobado en seco) y sigue SIN aplicar en Neon.
 
+## Estadísticas y estados de misión (2026-10-14)
+**Implementado:** `GET /estudiantes/yo/progreso`, `/estadisticas`, `/puntos` y `GET /aulas/{id}/estadisticas`; los estados de categoría (bloqueada, disponible, en_progreso, completada) con el requisito de desbloqueo visible (`requiereCategoriaId/Nombre`) en `GET /niveles/{id}/categorias`.
+- Los puntos de estas vistas salen del libro de transacciones; los porcentajes, solo de partidas completadas (primer intento). Los reintentos se informan aparte; las partidas incompletas, también.
+- Acceso de un docente a un aula ajena o inexistente: 404 y registro `acceso_aula_no_autorizado` en la auditoría.
+
+**Pruebas (`dotnet test`, Neon real, exit code 0): 53 correctas = 31 unitarias + 22 de integración, 0 con error (≈ 5,9 min).** Nuevas: `EstadisticasTests` (4: valores del estudiante, aislamiento entre estudiantes, el docente ve solo a los estudiantes activos de su aula y los retirados desaparecen, rechazo a docente ajeno / estudiante / invitado / anónimo y registro de auditoría) y la prueba de los cuatro estados. Tras la ejecución Neon quedó sin filas de prueba (comprobado).
+
+## Documentación
+`docs/api.md` (contrato real), `docs/requisitos.md` (RF/RNF con estado), `docs/diagnostico-frontend.md` (diagnóstico y plan), `docs/contenido-inicial.md`.
+
+## Pendiente
+- Frontend: sin iniciar (esperando aprobación del plan de `docs/diagnostico-frontend.md`).
+- Backend: explicación de la pregunta en la retroalimentación; metadatos visuales del catálogo; nombre "Comunicación y Lenguaje"; logros; Google con Client ID; auditar más accesos denegados; medir rendimiento; CORS/cookies por entorno.
+- Contenido: aprobar y aplicar `002_contenido_inicial.sql` (hoy Neon no tiene categorías ni preguntas); Sociales y Naturales requieren pensum.
+
 ## Siguiente paso
-Aprobación del informe de Fase 0 y entrega segura de la cadena de conexión.
+Aprobación del plan del frontend y de las decisiones abiertas.

@@ -27,15 +27,26 @@ public class JuegoApi(HttpClient http, FixtureJuego fixture)
         return api;
     }
 
-    public static async Task<JuegoApi> NuevoEstudianteAsync(FixtureJuego fixture)
+    public Guid? UsuarioId { get; private set; }
+
+    /// <summary>Estudiante nuevo; se une al aula 1 salvo que se indique otro código de aula.</summary>
+    public static async Task<JuegoApi> NuevoEstudianteAsync(FixtureJuego fixture, string? codigoAula = null)
     {
         var cliente = fixture.Fabrica.CreateClient();
         var respuesta = await cliente.PostAsJsonAsync("/api/v1/estudiantes/registro", new SolicitudRegistroEstudiante(
-            fixture.CodigoAula, fixture.NombreUsuarioNuevo(), "clave123", "Estudiante test"));
+            codigoAula ?? fixture.CodigoAula, fixture.NombreUsuarioNuevo(), "clave123", "Estudiante test"));
         respuesta.EnsureSuccessStatusCode();
         var datos = (await respuesta.Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
         cliente.DefaultRequestHeaders.Authorization = new("Bearer", datos.TokenAcceso);
-        return new JuegoApi(cliente, fixture);
+        return new JuegoApi(cliente, fixture) { UsuarioId = datos.Usuario.Id };
+    }
+
+    /// <summary>Cliente autenticado como un docente de prueba.</summary>
+    public static JuegoApi ComoDocente(FixtureJuego fixture, Guid docenteId)
+    {
+        var cliente = fixture.Fabrica.CreateClient();
+        cliente.DefaultRequestHeaders.Authorization = new("Bearer", fixture.TokenDocente(docenteId));
+        return new JuegoApi(cliente, fixture) { UsuarioId = docenteId };
     }
 
     public static string? LeerCookie(HttpResponseMessage respuesta, string nombre) =>

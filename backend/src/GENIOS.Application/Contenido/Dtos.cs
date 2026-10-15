@@ -5,9 +5,12 @@ public record AsignaturaDto(long Id, string Codigo, string Nombre, string? Descr
 public record NivelDto(long Id, string Nombre, int NumeroOrden);
 
 /// <summary>
-/// Bloqueada = hay una categoría anterior en el nivel sin completar. Es null cuando no se sabe quién consulta.
+/// Estado para quien consulta: bloqueada, disponible, en_progreso o completada (null si no se sabe quién consulta).
+/// Si está bloqueada, RequiereCategoria* indica qué categoría hay que completar antes.
 /// </summary>
-public record CategoriaDto(long Id, string Codigo, string Nombre, string? Descripcion, int NumeroOrden, bool? Bloqueada = null);
+public record CategoriaDto(
+    long Id, string Codigo, string Nombre, string? Descripcion, int NumeroOrden,
+    string? Estado = null, long? RequiereCategoriaId = null, string? RequiereCategoriaNombre = null);
 
 /// <summary>Completada = al menos una partida con las 10 preguntas resueltas. El porcentaje usa solo el primer intento.</summary>
 public record ProgresoCategoriaDto(

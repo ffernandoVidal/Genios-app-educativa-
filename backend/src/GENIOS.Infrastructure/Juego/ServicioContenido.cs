@@ -22,12 +22,10 @@ public class ServicioContenido(GeniosDbContext bd) : IServicioContenido
     {
         var categorias = await bd.Categorias.AsNoTracking().Where(c => c.NivelEducativoId == nivelId && c.Activa)
             .OrderBy(c => c.NumeroOrden).ToListAsync(ct);
-        var completadas = (await bd.Partidas.AsNoTracking().DelPropietario(propietario)
-            .Where(p => p.Estado == "completada").Select(p => p.CategoriaId).Distinct().ToListAsync(ct)).ToHashSet();
+        var estados = await EstadosCategorias.CalcularAsync(bd, propietario, categorias, ct);
 
-        // La primera categoría del nivel está abierta; cada una siguiente se abre al completar la anterior.
-        return categorias.Select((c, i) => new CategoriaDto(c.Id, c.Codigo, c.Nombre, c.Descripcion, c.NumeroOrden,
-            Bloqueada: i > 0 && !completadas.Contains(categorias[i - 1].Id))).ToList();
+        return categorias.Select(c => new CategoriaDto(c.Id, c.Codigo, c.Nombre, c.Descripcion, c.NumeroOrden,
+            estados[c.Id].Estado, estados[c.Id].Requiere?.Id, estados[c.Id].Requiere?.Nombre)).ToList();
     }
 
     public async Task<CategoriaDto> ObtenerCategoriaAsync(long categoriaId, CancellationToken ct) =>

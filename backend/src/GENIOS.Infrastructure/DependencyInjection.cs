@@ -3,7 +3,9 @@ using GENIOS.Application.Autenticacion;
 using GENIOS.Infrastructure.GestionAulas;
 using GENIOS.Infrastructure.Auditoria;
 using GENIOS.Application.Contenido;
+using GENIOS.Application.Estadisticas;
 using GENIOS.Application.Invitados;
+using GENIOS.Infrastructure.Estadisticas;
 using GENIOS.Application.Partidas;
 using GENIOS.Application.Tiempo;
 using GENIOS.Infrastructure.Autenticacion;
@@ -52,6 +54,7 @@ public static class DependencyInjection
         services.AddScoped<GeneradorPreguntas>();
         services.AddScoped<IServicioPartidas, ServicioPartidas>();
         services.AddScoped<IServicioInvitados, ServicioInvitados>();
+        services.AddScoped<IServicioEstadisticas, ServicioEstadisticas>();
         return services;
     }
 }

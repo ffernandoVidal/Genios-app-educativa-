@@ -1,6 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
 using GENIOS.Api.Configuration;
+using GENIOS.Domain.Rules;
+using GENIOS.Infrastructure.Autenticacion;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -32,6 +35,17 @@ public class FixtureJuego : IAsyncLifetime
     public long CategoriaB1 { get; private set; }
     public long NivelA { get; private set; }
     public string CodigoAula { get; private set; } = "";
+    public Guid DocenteId { get; private set; }
+    public Guid AulaId { get; private set; }
+
+    // Segundo docente con su propia aula, para probar el aislamiento entre docentes.
+    public string CodigoAula2 { get; private set; } = "";
+    public Guid Docente2Id { get; private set; }
+    public Guid Aula2Id { get; private set; }
+
+    /// <summary>Token de acceso válido para un docente de prueba (se firma con la clave de la fábrica de pruebas).</summary>
+    public string TokenDocente(Guid docenteId) =>
+        Fabrica.Services.GetRequiredService<EmisorTokens>().CrearTokenAcceso(docenteId, [CodigosRol.Docente]);
 
     private readonly List<long> _niveles = [];
     private int _contadorEstudiantes;
@@ -63,7 +77,8 @@ public class FixtureJuego : IAsyncLifetime
         CategoriaA2 = await CrearCategoriaAsync(NivelA, "a2", 2);
         CategoriaB1 = await CrearCategoriaAsync(nivelB, "b1", 1);
 
-        await CrearDocenteYAulaAsync();
+        (DocenteId, AulaId, CodigoAula) = await CrearDocenteYAulaAsync("d1");
+        (Docente2Id, Aula2Id, CodigoAula2) = await CrearDocenteYAulaAsync("d2");
     }
 
     public async Task DisposeAsync()
@@ -74,9 +89,10 @@ public class FixtureJuego : IAsyncLifetime
         await Ejecutar("delete from partidas where categoria_id = any(@c)", ("c", cats));
         await Ejecutar("delete from sesiones_invitado where id = any(@s)", ("s", _sesionesInvitado.ToArray()));
         await Ejecutar("delete from miembros_aula where estudiante_id in (select id from usuarios where nombre_usuario_normalizado like @p)", ("p", prefijo));
-        await Ejecutar("delete from auditoria_seguridad where usuario_id in (select id from usuarios where nombre_usuario_normalizado like @p or correo_normalizado = @d)", ("p", prefijo), ("d", $"t{Etiqueta}@prueba.invalid"));
-        await Ejecutar("delete from aulas where codigo_acceso = @a", ("a", CodigoAula));
-        await Ejecutar("delete from usuarios where nombre_usuario_normalizado like @p or correo_normalizado = @d", ("p", prefijo), ("d", $"t{Etiqueta}@prueba.invalid"));
+        var docentes = $"t{Etiqueta}%@prueba.invalid";
+        await Ejecutar("delete from auditoria_seguridad where usuario_id in (select id from usuarios where nombre_usuario_normalizado like @p or correo_normalizado like @d)", ("p", prefijo), ("d", docentes));
+        await Ejecutar("delete from aulas where docente_id in (select id from usuarios where correo_normalizado like @d)", ("d", docentes));
+        await Ejecutar("delete from usuarios where nombre_usuario_normalizado like @p or correo_normalizado like @d", ("p", prefijo), ("d", docentes));
         await Ejecutar("delete from reglas_generacion_preguntas where categoria_id = any(@c)", ("c", cats));
         await Ejecutar("delete from categorias where id = any(@c)", ("c", cats));
         await Ejecutar("delete from niveles_educativos where id = any(@n)", ("n", _niveles.ToArray()));
@@ -149,12 +165,12 @@ public class FixtureJuego : IAsyncLifetime
         return id;
     }
 
-    private async Task CrearDocenteYAulaAsync()
+    private async Task<(Guid DocenteId, Guid AulaId, string Codigo)> CrearDocenteYAulaAsync(string sufijo)
     {
         var rolDocente = await Escalar<long>("select id from roles where codigo = 'docente'");
         var docenteId = await Escalar<Guid>(
             "insert into usuarios (nombre_mostrar, estado, correo, correo_normalizado, metodo_registro) values ('Docente test', 'activo', @c, @c, 'google') returning id",
-            ("c", $"t{Etiqueta}@prueba.invalid"));
+            ("c", $"t{Etiqueta}{sufijo}@prueba.invalid"));
         await Ejecutar("insert into perfiles_docente (usuario_id, verificado_en) values (@u, now())", ("u", docenteId));
         await Ejecutar("insert into usuarios_roles (usuario_id, rol_id) values (@u, @r)", ("u", docenteId), ("r", rolDocente));
 
@@ -163,10 +179,9 @@ public class FixtureJuego : IAsyncLifetime
             var codigo = $"{(char)('A' + RandomNumberGenerator.GetInt32(26))}{RandomNumberGenerator.GetInt32(10000):D4}";
             try
             {
-                await Ejecutar("insert into aulas (docente_id, nombre, codigo_acceso) values (@d, @n, @c)",
-                    ("d", docenteId), ("n", $"Aula test {Etiqueta}"), ("c", codigo));
-                CodigoAula = codigo;
-                return;
+                var aulaId = await Escalar<Guid>("insert into aulas (docente_id, nombre, codigo_acceso) values (@d, @n, @c) returning id",
+                    ("d", docenteId), ("n", $"Aula test {Etiqueta} {sufijo}"), ("c", codigo));
+                return (docenteId, aulaId, codigo);
             }
             catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UniqueViolation && intento < 10) { }
         }

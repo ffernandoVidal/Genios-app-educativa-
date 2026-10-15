@@ -200,29 +200,43 @@ public class ModoInvitadoTests(FixtureJuego f)
 
         Assert.Equal(0, progreso!.PartidasCompletadas);
         Assert.False(progreso.Completada);
-        Assert.True(categorias!.Single(c => c.Id == f.CategoriaA2).Bloqueada); // sigue bloqueada para la cuenta nueva
+        Assert.Equal("bloqueada", categorias!.Single(c => c.Id == f.CategoriaA2).Estado); // sigue bloqueada para la cuenta nueva
+        Assert.Equal("disponible", categorias!.Single(c => c.Id == f.CategoriaA1).Estado);  // y la primera no figura como completada
     }
 
     // ------------------------------------------------------------ Progresión de categorías
 
     [Fact]
-    public async Task La_categoria_siguiente_esta_bloqueada_hasta_completar_la_anterior()
+    public async Task Las_misiones_pasan_por_los_cuatro_estados_y_el_servidor_impone_el_bloqueo()
     {
         var invitado = await JuegoApi.NuevoInvitadoAsync(f);
+        async Task<List<CategoriaDto>> Listar() =>
+            (await invitado.Http.GetFromJsonAsync<List<CategoriaDto>>($"/api/v1/niveles/{f.NivelA}/categorias"))!;
 
-        var antes = await invitado.Http.GetFromJsonAsync<List<CategoriaDto>>($"/api/v1/niveles/{f.NivelA}/categorias");
-        Assert.False(antes!.Single(c => c.Id == f.CategoriaA1).Bloqueada);
-        Assert.True(antes.Single(c => c.Id == f.CategoriaA2).Bloqueada);
+        // Inicio: la primera disponible, la segunda bloqueada y con su requisito visible.
+        var inicio = await Listar();
+        Assert.Equal("disponible", inicio.Single(c => c.Id == f.CategoriaA1).Estado);
+        var bloqueadaInicial = inicio.Single(c => c.Id == f.CategoriaA2);
+        Assert.Equal("bloqueada", bloqueadaInicial.Estado);
+        Assert.Equal(f.CategoriaA1, bloqueadaInicial.RequiereCategoriaId);
+        Assert.False(string.IsNullOrEmpty(bloqueadaInicial.RequiereCategoriaNombre));
 
-        var bloqueada = await invitado.CrearPartidaAsync(f.CategoriaA2);
-        Assert.Equal(HttpStatusCode.Forbidden, bloqueada.StatusCode);
-        Assert.Equal("categoria_bloqueada", await JuegoApi.CodigoErrorAsync(bloqueada));
+        // El servidor rechaza iniciar una categoría bloqueada aunque se llame a la API directamente.
+        var rechazada = await invitado.CrearPartidaAsync(f.CategoriaA2);
+        Assert.Equal(HttpStatusCode.Forbidden, rechazada.StatusCode);
+        Assert.Equal("categoria_bloqueada", await JuegoApi.CodigoErrorAsync(rechazada));
 
+        // Con una partida iniciada: en progreso.
+        Assert.Equal(HttpStatusCode.OK, (await invitado.CrearPartidaAsync(f.CategoriaA1)).StatusCode);
+        Assert.Equal("en_progreso", (await Listar()).Single(c => c.Id == f.CategoriaA1).Estado);
+
+        // Completada la primera: ella queda completada y la segunda disponible, sin requisito.
         await invitado.JugarAsync(f.CategoriaA1);
-
-        var despues = await invitado.Http.GetFromJsonAsync<List<CategoriaDto>>($"/api/v1/niveles/{f.NivelA}/categorias");
-        Assert.False(despues!.Single(c => c.Id == f.CategoriaA2).Bloqueada);
-        Assert.Equal(2, despues.Count);
+        var despues = await Listar();
+        Assert.Equal("completada", despues.Single(c => c.Id == f.CategoriaA1).Estado);
+        var segunda = despues.Single(c => c.Id == f.CategoriaA2);
+        Assert.Equal("disponible", segunda.Estado);
+        Assert.Null(segunda.RequiereCategoriaId);
         Assert.Equal(HttpStatusCode.OK, (await invitado.CrearPartidaAsync(f.CategoriaA2)).StatusCode);
     }
 }
