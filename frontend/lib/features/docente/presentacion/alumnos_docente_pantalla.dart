@@ -1,11 +1,11 @@
+import 'colores_docente.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/estado/estado_carga.dart';
 import '../../../diseno/componentes/vistas_estado.dart';
-import '../../../diseno/tokens/colores.dart';
 import '../../../diseno/tokens/medidas.dart';
-import '../../../diseno/tokens/tipografia.dart';
 import '../dominio/repositorio_docente.dart';
 import 'componentes/componentes_docente.dart';
 import 'componentes/fila_estudiante.dart';
@@ -53,7 +53,7 @@ class _VistaState extends State<_Vista> {
         builder: (context, e) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Alumnos', style: Tipografia.titulo(30, peso: 800)),
+            Text('Alumnos', style: TipografiaDocente.titulo(30, peso: 800)),
             const SizedBox(height: Espaciado.l),
             Bloque(
               titulo: 'Buscar y filtrar',
@@ -177,7 +177,7 @@ class _VistaState extends State<_Vista> {
                 e.rendimiento != null
             ? 'Ningún estudiante coincide con estos filtros.'
             : 'Todavía no tienes estudiantes asignados. Comparte el código de tu clase o crea alumnos desde «Crear alumno».',
-        style: Tipografia.texto(18, color: ColoresGenios.textoSuave),
+        style: TipografiaDocente.texto(18, color: ColoresDocente.textoSuave),
       );
     }
     return Column(
@@ -198,7 +198,7 @@ class _VistaState extends State<_Vista> {
             ),
             Text(
               'Página ${pagina.pagina} de ${pagina.paginas}',
-              style: Tipografia.texto(16, peso: 700),
+              style: TipografiaDocente.texto(16, peso: 700),
             ),
             IconButton(
               tooltip: 'Página siguiente',

@@ -1,3 +1,5 @@
+import 'colores_docente.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +11,6 @@ import '../../../diseno/componentes/icono_materia.dart';
 import '../../../diseno/componentes/vistas_estado.dart';
 import '../../../diseno/tokens/colores.dart';
 import '../../../diseno/tokens/medidas.dart';
-import '../../../diseno/tokens/tipografia.dart';
 import '../dominio/repositorio_docente.dart';
 import 'componentes/componentes_docente.dart';
 import 'componentes/selector_periodo.dart';
@@ -104,11 +105,14 @@ class _Ficha extends StatelessWidget {
                     if (ficha.aulas.any((a) => a.grado != null))
                       '${ficha.aulas.firstWhere((a) => a.grado != null).grado}.º grado',
                   ].where((t) => t.isNotEmpty).join(' · '),
-                  style: Tipografia.texto(17),
+                  style: TipografiaDocente.texto(17),
                 ),
                 Text(
                   'Última actividad: ${textoFecha(ficha.ultimaActividad)}',
-                  style: Tipografia.texto(15, color: ColoresGenios.textoSuave),
+                  style: TipografiaDocente.texto(
+                    15,
+                    color: ColoresDocente.textoSuave,
+                  ),
                 ),
                 const SizedBox(height: Espaciado.m),
                 SelectorPeriodo(alElegir: cubit.cambiarPeriodo),
@@ -130,7 +134,10 @@ class _Ficha extends StatelessWidget {
           if (sinPartidas)
             Text(
               'Sin actividad en este período.',
-              style: Tipografia.texto(18, color: ColoresGenios.textoSuave),
+              style: TipografiaDocente.texto(
+                18,
+                color: ColoresDocente.textoSuave,
+              ),
             )
           else
             CuadriculaAdaptable(
@@ -178,7 +185,10 @@ class _Ficha extends StatelessWidget {
               padding: const EdgeInsets.only(top: Espaciado.s),
               child: Text(
                 'Promedio del grupo (solo tus estudiantes autorizados): ${textoPorcentaje(ficha.promedioGrupo)}',
-                style: Tipografia.texto(15, color: ColoresGenios.textoSuave),
+                style: TipografiaDocente.texto(
+                  15,
+                  color: ColoresDocente.textoSuave,
+                ),
               ),
             ),
           const SizedBox(height: Espaciado.xl),
@@ -187,9 +197,9 @@ class _Ficha extends StatelessWidget {
             hijo: ficha.partidasPorDia.isEmpty
                 ? Text(
                     'Sin actividad en este período.',
-                    style: Tipografia.texto(
+                    style: TipografiaDocente.texto(
                       16,
-                      color: ColoresGenios.textoSuave,
+                      color: ColoresDocente.textoSuave,
                     ),
                   )
                 : GraficaBarras(
@@ -213,9 +223,9 @@ class _Ficha extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'Sin actividad en este período.',
-                      style: Tipografia.texto(
+                      style: TipografiaDocente.texto(
                         16,
-                        color: ColoresGenios.textoSuave,
+                        color: ColoresDocente.textoSuave,
                       ),
                     ),
                   ),
@@ -288,7 +298,7 @@ class _FilaMateria extends StatelessWidget {
               Expanded(
                 child: Text(
                   EstiloMateria.nombreVisible(m.nombre),
-                  style: Tipografia.titulo(20, peso: 700),
+                  style: TipografiaDocente.titulo(20, peso: 700),
                 ),
               ),
               ChipRendimiento(m.rendimiento),
@@ -302,7 +312,10 @@ class _FilaMateria extends StatelessWidget {
           const SizedBox(height: Espaciado.xs),
           Text(
             '${textoPorcentaje(m.promedioAciertos)} de aciertos · ${m.partidas} partidas · ${textoVariacion(m.variacion)}',
-            style: Tipografia.texto(14, color: ColoresGenios.textoSuave),
+            style: TipografiaDocente.texto(
+              14,
+              color: ColoresDocente.textoSuave,
+            ),
           ),
           Align(
             alignment: Alignment.centerLeft,
@@ -376,7 +389,7 @@ class _ContenidoDetalle extends StatelessWidget {
               Expanded(
                 child: Text(
                   EstiloMateria.nombreVisible(d.nombre),
-                  style: Tipografia.titulo(22, peso: 800),
+                  style: TipografiaDocente.titulo(22, peso: 800),
                 ),
               ),
               ChipRendimiento(d.rendimiento),
@@ -385,14 +398,14 @@ class _ContenidoDetalle extends StatelessWidget {
           const SizedBox(height: Espaciado.s),
           Text(
             'Promedio ${textoPorcentaje(d.promedioAciertos)} · ${d.partidas} partidas · tiempo medio ${textoDuracion(d.tiempoMedioSegundos)}',
-            style: Tipografia.texto(15),
+            style: TipografiaDocente.texto(15),
           ),
           Text(
             '${d.misionesTrabajadas} misiones trabajadas · ${d.leccionesAprobadas} lecciones aprobadas · ${d.leccionesPendientes} pendientes',
-            style: Tipografia.texto(15),
+            style: TipografiaDocente.texto(15),
           ),
           const SizedBox(height: Espaciado.m),
-          Text('Lecciones', style: Tipografia.titulo(18, peso: 800)),
+          Text('Lecciones', style: TipografiaDocente.titulo(18, peso: 800)),
           for (final l in d.lecciones)
             Row(
               children: [
@@ -403,13 +416,13 @@ class _ContenidoDetalle extends StatelessWidget {
                   size: 18,
                   color: l.aprobada
                       ? ColoresRendimiento.aprobado
-                      : ColoresGenios.textoSuave,
+                      : ColoresDocente.textoSuave,
                 ),
                 const SizedBox(width: Espaciado.s),
                 Expanded(
                   child: Text(
                     '${l.nombre} · ${l.aprobada ? 'aprobada' : 'pendiente'}${l.mejorAciertos == null ? '' : ' (mejor: ${l.mejorAciertos}/10)'}',
-                    style: Tipografia.texto(14),
+                    style: TipografiaDocente.texto(14),
                   ),
                 ),
               ],
@@ -417,12 +430,15 @@ class _ContenidoDetalle extends StatelessWidget {
           const SizedBox(height: Espaciado.m),
           Text(
             'Historial de evaluaciones',
-            style: Tipografia.titulo(18, peso: 800),
+            style: TipografiaDocente.titulo(18, peso: 800),
           ),
           if (d.historial.isEmpty)
             Text(
               'Sin evaluaciones.',
-              style: Tipografia.texto(14, color: ColoresGenios.textoSuave),
+              style: TipografiaDocente.texto(
+                14,
+                color: ColoresDocente.textoSuave,
+              ),
             ),
           for (final h in d.historial)
             Padding(
@@ -432,7 +448,7 @@ class _ContenidoDetalle extends StatelessWidget {
                   Expanded(
                     child: Text(
                       '${textoFecha(h.fecha)} · ${h.leccion} · ${h.aciertos}/${h.evaluadas}',
-                      style: Tipografia.texto(14),
+                      style: TipografiaDocente.texto(14),
                     ),
                   ),
                   ChipRendimiento(h.rendimiento),
@@ -442,19 +458,22 @@ class _ContenidoDetalle extends StatelessWidget {
           const SizedBox(height: Espaciado.m),
           Text(
             'Preguntas con más errores',
-            style: Tipografia.titulo(18, peso: 800),
+            style: TipografiaDocente.titulo(18, peso: 800),
           ),
           if (d.errores.isEmpty)
             Text(
               'Sin errores registrados.',
-              style: Tipografia.texto(14, color: ColoresGenios.textoSuave),
+              style: TipografiaDocente.texto(
+                14,
+                color: ColoresDocente.textoSuave,
+              ),
             ),
           for (final e in d.errores)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Text(
                 '• ${e.enunciado} (${e.errores} de ${e.veces})',
-                style: Tipografia.texto(14),
+                style: TipografiaDocente.texto(14),
               ),
             ),
         ],
@@ -499,7 +518,7 @@ class _Calendario extends StatelessWidget {
                       '${_meses[e.mes - 1]} ${e.anio}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Tipografia.titulo(20, peso: 800),
+                      style: TipografiaDocente.titulo(20, peso: 800),
                     ),
                   ),
                   IconButton(
@@ -524,10 +543,10 @@ class _Calendario extends StatelessWidget {
                         child: Center(
                           child: Text(
                             d,
-                            style: Tipografia.texto(
+                            style: TipografiaDocente.texto(
                               13,
                               peso: 800,
-                              color: ColoresGenios.textoSuave,
+                              color: ColoresDocente.textoSuave,
                             ),
                           ),
                         ),
@@ -558,7 +577,10 @@ class _Calendario extends StatelessWidget {
                 const SizedBox(height: Espaciado.s),
                 Text(
                   e.dias.isEmpty ? 'Sin actividad en este mes.' : 'Los días con color tuvieron partidas. Un día sin color no significa bajo rendimiento.',
-                  style: Tipografia.texto(13, color: ColoresGenios.textoSuave),
+                  style: TipografiaDocente.texto(
+                    13,
+                    color: ColoresDocente.textoSuave,
+                  ),
                 ),
                 if (e.diaElegido != null)
                   Padding(
@@ -567,7 +589,7 @@ class _Calendario extends StatelessWidget {
                       elegido == null
                           ? '${e.diaElegido!.day} de ${_meses[e.mes - 1]}: sin actividad.'
                           : '${e.diaElegido!.day} de ${_meses[e.mes - 1]}: ${elegido.partidas} partidas · ${textoDuracion(elegido.tiempoActivoSegundos)} de tiempo activo · ${elegido.materias.map(EstiloMateria.nombreVisible).join(', ')}',
-                      style: Tipografia.texto(16, peso: 700),
+                      style: TipografiaDocente.texto(16, peso: 700),
                     ),
                   ),
               ],
@@ -608,12 +630,12 @@ class _Dia extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: activo
-                ? ColoresGenios.turquesa.withValues(alpha: 0.3)
-                : ColoresGenios.superficieOscura,
+                ? ColoresDocente.acento.withValues(alpha: 0.3)
+                : ColoresDocente.pista,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: seleccionado
-                  ? ColoresGenios.amarilloEspacial
+                  ? ColoresDocente.destacado
                   : Colors.transparent,
               width: 2,
             ),
@@ -623,14 +645,14 @@ class _Dia extends StatelessWidget {
             children: [
               Text(
                 '$dia',
-                style: Tipografia.texto(14, peso: activo ? 800 : 500),
+                style: TipografiaDocente.texto(14, peso: activo ? 800 : 500),
               ),
               if (activo)
                 Text(
                   '${actividad!.partidas}',
-                  style: Tipografia.texto(
+                  style: TipografiaDocente.texto(
                     11,
-                    color: ColoresGenios.turquesa,
+                    color: ColoresDocente.acento,
                     peso: 800,
                   ),
                 ),

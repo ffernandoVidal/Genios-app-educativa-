@@ -1,9 +1,10 @@
+import '../colores_docente.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../diseno/tokens/colores.dart';
 import '../../../../diseno/tokens/medidas.dart';
-import '../../../../diseno/tokens/tipografia.dart';
 import '../../dominio/modelos_docente.dart';
 
 // ------------------------------------------------------------------ Formatos
@@ -78,7 +79,7 @@ class ChipRendimiento extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               rendimiento.etiqueta,
-              style: Tipografia.texto(12, peso: 800, color: color),
+              style: TipografiaDocente.texto(12, peso: 800, color: color),
             ),
           ],
         ),
@@ -110,7 +111,7 @@ class BarraPorcentaje extends StatelessWidget {
         child: LinearProgressIndicator(
           value: ((valor ?? 0) / 100).clamp(0.0, 1.0),
           minHeight: 12,
-          backgroundColor: ColoresGenios.superficieOscura,
+          backgroundColor: ColoresDocente.pista,
           color: rendimiento.color,
         ),
       ),
@@ -136,7 +137,7 @@ class Bloque extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: ColoresGenios.superficie,
+      color: ColoresDocente.superficie,
       borderRadius: Radios.tarjeta,
       child: Padding(
         padding: const EdgeInsets.all(Espaciado.l),
@@ -150,7 +151,7 @@ class Bloque extends StatelessWidget {
                     header: true,
                     child: Text(
                       titulo,
-                      style: Tipografia.titulo(22, peso: 800),
+                      style: TipografiaDocente.titulo(22, peso: 800),
                     ),
                   ),
                 ),
@@ -173,7 +174,7 @@ class TarjetaIndicador extends StatelessWidget {
     required this.titulo,
     required this.valor,
     this.detalle,
-    this.color = ColoresGenios.turquesa,
+    this.color = ColoresDocente.acento,
   });
 
   final IconData icono;
@@ -188,7 +189,7 @@ class TarjetaIndicador extends StatelessWidget {
       label: '$titulo: $valor${detalle == null ? '' : '. $detalle'}',
       excludeSemantics: true,
       child: Material(
-        color: ColoresGenios.superficie,
+        color: ColoresDocente.superficie,
         borderRadius: Radios.tarjeta,
         child: Padding(
           padding: const EdgeInsets.all(Espaciado.l),
@@ -204,20 +205,20 @@ class TarjetaIndicador extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(valor, style: Tipografia.titulo(28, peso: 800)),
+                    Text(valor, style: TipografiaDocente.titulo(28, peso: 800)),
                     Text(
                       titulo,
-                      style: Tipografia.texto(
+                      style: TipografiaDocente.texto(
                         14,
-                        color: ColoresGenios.textoSuave,
+                        color: ColoresDocente.textoSuave,
                       ),
                     ),
                     if (detalle != null)
                       Text(
                         detalle!,
-                        style: Tipografia.texto(
+                        style: TipografiaDocente.texto(
                           12,
-                          color: ColoresGenios.textoSuave,
+                          color: ColoresDocente.textoSuave,
                         ),
                       ),
                   ],
@@ -270,7 +271,7 @@ class MensajeAccion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = esError ? ColoresGenios.error : ColoresGenios.exito;
+    final color = esError ? ColoresDocente.error : ColoresDocente.exito;
     return Semantics(
       liveRegion: true,
       child: Row(
@@ -283,7 +284,7 @@ class MensajeAccion extends StatelessWidget {
           Flexible(
             child: Text(
               mensaje,
-              style: Tipografia.texto(16, peso: 800, color: color),
+              style: TipografiaDocente.texto(16, peso: 800, color: color),
             ),
           ),
         ],
@@ -315,16 +316,16 @@ class TarjetaActivacion extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(Espaciado.l),
         decoration: BoxDecoration(
-          color: ColoresGenios.exito.withValues(alpha: 0.16),
+          color: ColoresDocente.exito.withValues(alpha: 0.16),
           borderRadius: Radios.tarjeta,
-          border: Border.all(color: ColoresGenios.exito, width: 2),
+          border: Border.all(color: ColoresDocente.exito, width: 2),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Entrégale esto a ${codigo.nombreUsuario}:',
-              style: Tipografia.titulo(20, peso: 800),
+              style: TipografiaDocente.titulo(20, peso: 800),
             ),
             const SizedBox(height: Espaciado.s),
             Row(
@@ -332,10 +333,10 @@ class TarjetaActivacion extends StatelessWidget {
                 Expanded(
                   child: SelectableText(
                     codigo.codigo,
-                    style: Tipografia.titulo(
+                    style: TipografiaDocente.titulo(
                       36,
                       peso: 800,
-                      color: ColoresGenios.amarilloEspacial,
+                      color: ColoresDocente.destacado,
                     ),
                   ),
                 ),
@@ -353,7 +354,10 @@ class TarjetaActivacion extends StatelessWidget {
             ),
             Text(
               'El estudiante entra en «Iniciar sesión → Tengo un código de mi docente». Es de un solo uso y vence en ${minutos < 1 ? 'unos minutos' : '$minutos minutos'}. No se vuelve a mostrar.',
-              style: Tipografia.texto(15, color: ColoresGenios.textoSuave),
+              style: TipografiaDocente.texto(
+                15,
+                color: ColoresDocente.textoSuave,
+              ),
             ),
           ],
         ),
@@ -379,7 +383,7 @@ class GraficaBarras extends StatelessWidget {
     required this.unidad,
     this.referencia,
     this.etiquetaReferencia,
-    this.color = ColoresGenios.turquesa,
+    this.color = ColoresDocente.acento,
   });
 
   final List<BarraDato> datos;
@@ -423,7 +427,7 @@ class GraficaBarras extends StatelessWidget {
                       bottom: 28 + alto * (referencia! / maximo),
                       child: Container(
                         height: 2,
-                        color: ColoresGenios.amarilloEspacial,
+                        color: ColoresDocente.destacado,
                       ),
                     ),
                   Row(
@@ -437,7 +441,7 @@ class GraficaBarras extends StatelessWidget {
                             children: [
                               Text(
                                 d.valor.toStringAsFixed(0),
-                                style: Tipografia.texto(12, peso: 800),
+                                style: TipografiaDocente.texto(12, peso: 800),
                               ),
                               const SizedBox(height: 2),
                               Container(
@@ -461,9 +465,9 @@ class GraficaBarras extends StatelessWidget {
                                   textAlign: TextAlign.center,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Tipografia.texto(
+                                  style: TipografiaDocente.texto(
                                     11,
-                                    color: ColoresGenios.textoSuave,
+                                    color: ColoresDocente.textoSuave,
                                   ),
                                 ),
                               ),
@@ -479,7 +483,10 @@ class GraficaBarras extends StatelessWidget {
           const SizedBox(height: Espaciado.s),
           Text(
             'Eje vertical: $unidad${referencia != null ? ' · línea amarilla: ${etiquetaReferencia ?? 'referencia'}' : ''}',
-            style: Tipografia.texto(13, color: ColoresGenios.textoSuave),
+            style: TipografiaDocente.texto(
+              13,
+              color: ColoresDocente.textoSuave,
+            ),
           ),
         ],
       ),

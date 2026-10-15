@@ -1,3 +1,5 @@
+import 'colores_docente.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +10,6 @@ import '../../../diseno/componentes/icono_materia.dart';
 import '../../../diseno/componentes/vistas_estado.dart';
 import '../../../diseno/tokens/colores.dart';
 import '../../../diseno/tokens/medidas.dart';
-import '../../../diseno/tokens/tipografia.dart';
 import '../../catalogo/dominio/modelos_catalogo.dart';
 import '../../catalogo/dominio/repositorio_catalogo.dart';
 import '../dominio/repositorio_docente.dart';
@@ -71,11 +72,14 @@ class _EstadoPantalla extends State<EstadisticasDocentePantalla> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Estadísticas', style: Tipografia.titulo(30, peso: 800)),
+          Text('Estadísticas', style: TipografiaDocente.titulo(30, peso: 800)),
           const SizedBox(height: Espaciado.l),
           Text(
             'Aún no tienes clases. Crea una para ver sus estadísticas.',
-            style: Tipografia.texto(18, color: ColoresGenios.textoSuave),
+            style: TipografiaDocente.texto(
+              18,
+              color: ColoresDocente.textoSuave,
+            ),
           ),
           const SizedBox(height: Espaciado.l),
           Align(
@@ -95,7 +99,7 @@ class _EstadoPantalla extends State<EstadisticasDocentePantalla> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Estadísticas', style: Tipografia.titulo(30, peso: 800)),
+        Text('Estadísticas', style: TipografiaDocente.titulo(30, peso: 800)),
         const SizedBox(height: Espaciado.l),
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 360),
@@ -182,7 +186,7 @@ class _Resultados extends StatelessWidget {
     if (d.totalEstudiantes == 0) {
       return Text(
         'Esta clase todavía no tiene estudiantes.',
-        style: Tipografia.texto(18, color: ColoresGenios.textoSuave),
+        style: TipografiaDocente.texto(18, color: ColoresDocente.textoSuave),
       );
     }
     return Column(
@@ -220,7 +224,7 @@ class _Resultados extends StatelessWidget {
         const SizedBox(height: Espaciado.l),
         Text(
           'Distribución de estudiantes por rendimiento',
-          style: Tipografia.titulo(18, peso: 800),
+          style: TipografiaDocente.titulo(18, peso: 800),
         ),
         const SizedBox(height: Espaciado.s),
         Wrap(
@@ -236,13 +240,16 @@ class _Resultados extends StatelessWidget {
         const SizedBox(height: Espaciado.l),
         Text(
           'Materias con mayor dificultad (menor promedio primero)',
-          style: Tipografia.titulo(18, peso: 800),
+          style: TipografiaDocente.titulo(18, peso: 800),
         ),
         const SizedBox(height: Espaciado.s),
         if (d.materias.isEmpty)
           Text(
             'Sin actividad en este período.',
-            style: Tipografia.texto(16, color: ColoresGenios.textoSuave),
+            style: TipografiaDocente.texto(
+              16,
+              color: ColoresDocente.textoSuave,
+            ),
           ),
         for (final m in d.materias)
           Padding(
@@ -255,12 +262,12 @@ class _Resultados extends StatelessWidget {
                     Expanded(
                       child: Text(
                         EstiloMateria.nombreVisible(m.nombre),
-                        style: Tipografia.texto(17, peso: 700),
+                        style: TipografiaDocente.texto(17, peso: 700),
                       ),
                     ),
                     Text(
                       textoPorcentaje(m.promedioAciertos),
-                      style: Tipografia.texto(16, peso: 800),
+                      style: TipografiaDocente.texto(16, peso: 800),
                     ),
                     const SizedBox(width: Espaciado.s),
                     ChipRendimiento(m.rendimiento),
@@ -275,12 +282,18 @@ class _Resultados extends StatelessWidget {
             ),
           ),
         const SizedBox(height: Espaciado.l),
-        Text('Evolución semanal', style: Tipografia.titulo(18, peso: 800)),
+        Text(
+          'Evolución semanal',
+          style: TipografiaDocente.titulo(18, peso: 800),
+        ),
         const SizedBox(height: Espaciado.s),
         d.semanas.isEmpty
             ? Text(
                 'Sin actividad en este período.',
-                style: Tipografia.texto(16, color: ColoresGenios.textoSuave),
+                style: TipografiaDocente.texto(
+                  16,
+                  color: ColoresDocente.textoSuave,
+                ),
               )
             : GraficaBarras(
                 unidad: 'partidas completadas por semana (la etiqueta es el lunes de cada semana)',
@@ -325,7 +338,7 @@ class _Conteo extends StatelessWidget {
             const SizedBox(width: Espaciado.s),
             Text(
               '${nivel.etiqueta}: $cantidad',
-              style: Tipografia.texto(16, peso: 800),
+              style: TipografiaDocente.texto(16, peso: 800),
             ),
           ],
         ),
@@ -433,7 +446,10 @@ class _CuerpoRankingState extends State<_CuerpoRanking> {
             else if (e.filas.isEmpty)
               Text(
                 'Todavía no hay estudiantes para mostrar con estos filtros.',
-                style: Tipografia.texto(18, color: ColoresGenios.textoSuave),
+                style: TipografiaDocente.texto(
+                  18,
+                  color: ColoresDocente.textoSuave,
+                ),
               )
             else
               for (final f in e.filas) _FilaPosicion(fila: f),
@@ -483,7 +499,7 @@ class _FilaPosicion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final medalla = switch (fila.posicion) {
-      1 => ColoresGenios.amarilloEspacial,
+      1 => ColoresDocente.destacado,
       2 => const Color(0xFFC0C8CC),
       3 => const Color(0xFFCD7F32),
       _ => null,
@@ -498,15 +514,15 @@ class _FilaPosicion extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundColor: medalla ?? ColoresGenios.azulPetroleo,
+              backgroundColor: medalla ?? ColoresDocente.superficie,
               child: Text(
                 '${fila.posicion}',
-                style: Tipografia.titulo(
+                style: TipografiaDocente.titulo(
                   18,
                   peso: 800,
                   color: medalla == null
-                      ? ColoresGenios.blancoLunar
-                      : ColoresGenios.textoSobreClaro,
+                      ? ColoresDocente.texto
+                      : ColoresDocente.texto,
                 ),
               ),
             ),
@@ -517,13 +533,13 @@ class _FilaPosicion extends StatelessWidget {
                 children: [
                   Text(
                     fila.nombreMostrar,
-                    style: Tipografia.titulo(19, peso: 700),
+                    style: TipografiaDocente.titulo(19, peso: 700),
                   ),
                   Text(
                     '${fila.aulas.join(', ')} · ${textoPorcentaje(fila.porcentajeAciertos)} aciertos · ${fila.partidas} partidas',
-                    style: Tipografia.texto(
+                    style: TipografiaDocente.texto(
                       14,
-                      color: ColoresGenios.textoSuave,
+                      color: ColoresDocente.textoSuave,
                     ),
                   ),
                 ],
@@ -531,17 +547,14 @@ class _FilaPosicion extends StatelessWidget {
             ),
             Text(
               '${fila.puntos}',
-              style: Tipografia.titulo(
+              style: TipografiaDocente.titulo(
                 24,
                 peso: 800,
-                color: ColoresGenios.amarilloEspacial,
+                color: ColoresDocente.destacado,
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(
-              Icons.star_rounded,
-              color: ColoresGenios.amarilloEspacial,
-            ),
+            const Icon(Icons.star_rounded, color: ColoresDocente.destacado),
           ],
         ),
       ),

@@ -7,6 +7,7 @@ import '../../../diseno/tokens/colores.dart';
 import '../../../diseno/tokens/medidas.dart';
 import '../../../diseno/tokens/tipografia.dart';
 import '../dominio/repositorio_docente.dart';
+import 'colores_docente.dart';
 import 'cubits_docente.dart';
 
 class _Seccion {
@@ -74,19 +75,25 @@ class _Cuerpo extends StatelessWidget {
     final ancho = MediaQuery.sizeOf(context).width;
     final activa = seccionActiva(ubicacion);
     final esMovil = ancho < PuntosDeQuiebre.tableta;
-    final contenido = Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1100),
-        child: Padding(
-          padding: const EdgeInsets.all(Espaciado.pantalla),
-          child: hijo,
+    final contenido = Theme(
+      data: temaContenidoDocente(Theme.of(context)),
+      child: Material(
+        color: ColoresDocente.fondo,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1100),
+            child: Padding(
+              padding: const EdgeInsets.all(Espaciado.pantalla),
+              child: hijo,
+            ),
+          ),
         ),
       ),
     );
 
     return Scaffold(
-      backgroundColor: ColoresGenios.espacioProfundo,
+      backgroundColor: ColoresDocente.fondo,
       appBar: AppBar(
         backgroundColor: ColoresGenios.azulPetroleo,
         title: Row(

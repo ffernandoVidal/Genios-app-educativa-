@@ -1,3 +1,5 @@
+import 'colores_docente.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -5,9 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/ajustes/ajustes_app.dart';
 import '../../../core/sesion/sesion_app.dart';
 import '../../../diseno/componentes/botones_juego.dart';
-import '../../../diseno/tokens/colores.dart';
 import '../../../diseno/tokens/medidas.dart';
-import '../../../diseno/tokens/tipografia.dart';
 import '../../acceso/presentacion/acceso_cubit.dart';
 import 'componentes/componentes_docente.dart';
 
@@ -23,17 +23,20 @@ class AjustesDocentePantalla extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Ajustes', style: Tipografia.titulo(30, peso: 800)),
+          Text('Ajustes', style: TipografiaDocente.titulo(30, peso: 800)),
           const SizedBox(height: Espaciado.l),
           Bloque(
             titulo: 'Tu cuenta',
             hijo: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(nombre, style: Tipografia.titulo(22, peso: 700)),
+                Text(nombre, style: TipografiaDocente.titulo(22, peso: 700)),
                 Text(
                   'Cuenta docente con Google',
-                  style: Tipografia.texto(15, color: ColoresGenios.textoSuave),
+                  style: TipografiaDocente.texto(
+                    15,
+                    color: ColoresDocente.textoSuave,
+                  ),
                 ),
                 const SizedBox(height: Espaciado.m),
                 BotonSecundarioJuego(
@@ -58,13 +61,13 @@ class AjustesDocentePantalla extends StatelessWidget {
                     contentPadding: EdgeInsets.zero,
                     title: Text(
                       'Texto más grande',
-                      style: Tipografia.titulo(20, peso: 700),
+                      style: TipografiaDocente.titulo(20, peso: 700),
                     ),
                     subtitle: Text(
                       'Hace las letras más fáciles de leer.',
-                      style: Tipografia.texto(
+                      style: TipografiaDocente.texto(
                         15,
-                        color: ColoresGenios.textoSuave,
+                        color: ColoresDocente.textoSuave,
                       ),
                     ),
                     value: ajustes.textoGrande,
@@ -74,13 +77,13 @@ class AjustesDocentePantalla extends StatelessWidget {
                     contentPadding: EdgeInsets.zero,
                     title: Text(
                       'Animaciones',
-                      style: Tipografia.titulo(20, peso: 700),
+                      style: TipografiaDocente.titulo(20, peso: 700),
                     ),
                     subtitle: Text(
                       'Movimiento de la mascota.',
-                      style: Tipografia.texto(
+                      style: TipografiaDocente.texto(
                         15,
-                        color: ColoresGenios.textoSuave,
+                        color: ColoresDocente.textoSuave,
                       ),
                     ),
                     value: ajustes.animaciones,
@@ -95,7 +98,10 @@ class AjustesDocentePantalla extends StatelessWidget {
             titulo: 'Privacidad',
             hijo: Text(
               'Solo ves a los estudiantes que pertenecen a tus clases. Los códigos de clase no dan acceso a resultados por sí solos. No puedes ver ni fijar contraseñas: solo emitir códigos de un solo uso.',
-              style: Tipografia.texto(16, color: ColoresGenios.textoSuave),
+              style: TipografiaDocente.texto(
+                16,
+                color: ColoresDocente.textoSuave,
+              ),
             ),
           ),
         ],

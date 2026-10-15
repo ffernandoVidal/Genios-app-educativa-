@@ -1,3 +1,5 @@
+import 'colores_docente.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -7,9 +9,7 @@ import '../../../core/red/excepcion_api.dart';
 import '../../../diseno/componentes/botones_juego.dart';
 import '../../../diseno/componentes/campo_genios.dart';
 import '../../../diseno/componentes/vistas_estado.dart';
-import '../../../diseno/tokens/colores.dart';
 import '../../../diseno/tokens/medidas.dart';
-import '../../../diseno/tokens/tipografia.dart';
 import '../dominio/repositorio_docente.dart';
 import 'componentes/componentes_docente.dart';
 import 'componentes/fila_estudiante.dart';
@@ -53,7 +53,10 @@ class ClasesDocentePantalla extends StatelessWidget {
             spacing: Espaciado.l,
             runSpacing: Espaciado.m,
             children: [
-              Text('Mis clases', style: Tipografia.titulo(30, peso: 800)),
+              Text(
+                'Mis clases',
+                style: TipografiaDocente.titulo(30, peso: 800),
+              ),
               BotonPrincipalJuego(
                 texto: 'CREAR CLASE',
                 icono: Icons.add_circle_rounded,
@@ -63,20 +66,22 @@ class ClasesDocentePantalla extends StatelessWidget {
           ),
           const SizedBox(height: Espaciado.l),
           BlocBuilder<AulasDocenteCubit, EstadoCarga<List<AulaDocente>>>(
-            builder: (context, estado) => _cargaDeClases(context, estado, (
-              aulas,
-            ) {
-              if (aulas.isEmpty) {
-                return Text(
-                  'Todavía no tienes clases. Crea la primera para obtener su código.',
-                  style: Tipografia.texto(18, color: ColoresGenios.textoSuave),
-                );
-              }
-              return CuadriculaAdaptable(
-                anchoMinimo: 300,
-                hijos: [for (final a in aulas) _TarjetaClase(aula: a)],
-              );
-            }),
+            builder: (context, estado) =>
+                _cargaDeClases(context, estado, (aulas) {
+                  if (aulas.isEmpty) {
+                    return Text(
+                      'Todavía no tienes clases. Crea la primera para obtener su código.',
+                      style: TipografiaDocente.texto(
+                        18,
+                        color: ColoresDocente.textoSuave,
+                      ),
+                    );
+                  }
+                  return CuadriculaAdaptable(
+                    anchoMinimo: 300,
+                    hijos: [for (final a in aulas) _TarjetaClase(aula: a)],
+                  );
+                }),
           ),
         ],
       ),
@@ -99,7 +104,10 @@ class _TarjetaClase extends StatelessWidget {
           if (aula.detalle.isNotEmpty)
             Text(
               aula.detalle,
-              style: Tipografia.texto(16, color: ColoresGenios.textoSuave),
+              style: TipografiaDocente.texto(
+                16,
+                color: ColoresDocente.textoSuave,
+              ),
             ),
           const SizedBox(height: Espaciado.s),
           Row(
@@ -110,10 +118,10 @@ class _TarjetaClase extends StatelessWidget {
                   excludeSemantics: true,
                   child: SelectableText(
                     aula.codigoAcceso ?? '—',
-                    style: Tipografia.titulo(
+                    style: TipografiaDocente.titulo(
                       30,
                       peso: 800,
-                      color: ColoresGenios.amarilloEspacial,
+                      color: ColoresDocente.destacado,
                     ),
                   ),
                 ),
@@ -133,7 +141,7 @@ class _TarjetaClase extends StatelessWidget {
           ),
           Text(
             '${aula.totalEstudiantes} alumnos · Activa',
-            style: Tipografia.texto(16, peso: 700),
+            style: TipografiaDocente.texto(16, peso: 700),
           ),
           const SizedBox(height: Espaciado.m),
           Align(
@@ -213,7 +221,7 @@ class _CrearClasePantallaState extends State<CrearClasePantalla> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Crear clase', style: Tipografia.titulo(30, peso: 800)),
+          Text('Crear clase', style: TipografiaDocente.titulo(30, peso: 800)),
           const SizedBox(height: Espaciado.l),
           Bloque(
             titulo: 'Datos de la clase',
@@ -297,11 +305,14 @@ class _Confirmacion extends StatelessWidget {
               esError: false,
             ),
             const SizedBox(height: Espaciado.l),
-            Text(aula.nombre, style: Tipografia.titulo(24, peso: 800)),
+            Text(aula.nombre, style: TipografiaDocente.titulo(24, peso: 800)),
             if (aula.detalle.isNotEmpty)
               Text(
                 aula.detalle,
-                style: Tipografia.texto(16, color: ColoresGenios.textoSuave),
+                style: TipografiaDocente.texto(
+                  16,
+                  color: ColoresDocente.textoSuave,
+                ),
               ),
             const SizedBox(height: Espaciado.m),
             Row(
@@ -309,10 +320,10 @@ class _Confirmacion extends StatelessWidget {
                 Expanded(
                   child: SelectableText(
                     aula.codigoAcceso ?? '—',
-                    style: Tipografia.titulo(
+                    style: TipografiaDocente.titulo(
                       44,
                       peso: 800,
-                      color: ColoresGenios.amarilloEspacial,
+                      color: ColoresDocente.destacado,
                     ),
                   ),
                 ),
@@ -331,7 +342,10 @@ class _Confirmacion extends StatelessWidget {
             ),
             Text(
               '0 alumnos · el código es permanente',
-              style: Tipografia.texto(16, color: ColoresGenios.textoSuave),
+              style: TipografiaDocente.texto(
+                16,
+                color: ColoresDocente.textoSuave,
+              ),
             ),
             const SizedBox(height: Espaciado.l),
             BotonPrincipalJuego(
@@ -364,7 +378,7 @@ class DetalleClasePantalla extends StatelessWidget {
               children: [
                 Text(
                   'No encontramos esta clase. Puede que ya esté archivada.',
-                  style: Tipografia.texto(18),
+                  style: TipografiaDocente.texto(18),
                 ),
                 const SizedBox(height: Espaciado.l),
                 BotonSecundarioJuego(
@@ -401,7 +415,7 @@ class _ContenidoClase extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(aula.nombre, style: Tipografia.titulo(30, peso: 800)),
+          Text(aula.nombre, style: TipografiaDocente.titulo(30, peso: 800)),
           const SizedBox(height: Espaciado.l),
           Bloque(
             titulo: 'Información general',
@@ -414,26 +428,29 @@ class _ContenidoClase extends StatelessWidget {
                     '${aula.totalEstudiantes} alumnos',
                     'Estado: activa',
                   ].join(' · '),
-                  style: Tipografia.texto(17),
+                  style: TipografiaDocente.texto(17),
                 ),
                 if (aula.descripcion != null && aula.descripcion!.isNotEmpty)
                   Text(
                     aula.descripcion!,
-                    style: Tipografia.texto(
+                    style: TipografiaDocente.texto(
                       16,
-                      color: ColoresGenios.textoSuave,
+                      color: ColoresDocente.textoSuave,
                     ),
                   ),
                 const SizedBox(height: Espaciado.m),
                 Row(
                   children: [
-                    Text('Código: ', style: Tipografia.texto(18, peso: 700)),
+                    Text(
+                      'Código: ',
+                      style: TipografiaDocente.texto(18, peso: 700),
+                    ),
                     SelectableText(
                       aula.codigoAcceso ?? '—',
-                      style: Tipografia.titulo(
+                      style: TipografiaDocente.titulo(
                         28,
                         peso: 800,
-                        color: ColoresGenios.amarilloEspacial,
+                        color: ColoresDocente.destacado,
                       ),
                     ),
                     if (aula.codigoAcceso != null)
@@ -486,9 +503,9 @@ class _ContenidoClase extends StatelessWidget {
                 if (filas.isEmpty) {
                   return Text(
                     'Aún no hay alumnos en esta clase.',
-                    style: Tipografia.texto(
+                    style: TipografiaDocente.texto(
                       18,
-                      color: ColoresGenios.textoSuave,
+                      color: ColoresDocente.textoSuave,
                     ),
                   );
                 }
@@ -549,7 +566,10 @@ class _ContenidoClase extends StatelessWidget {
                 const SizedBox(height: Espaciado.s),
                 Text(
                   'El código de la clase no cambia.',
-                  style: Tipografia.texto(14, color: ColoresGenios.textoSuave),
+                  style: TipografiaDocente.texto(
+                    14,
+                    color: ColoresDocente.textoSuave,
+                  ),
                 ),
               ],
             ),

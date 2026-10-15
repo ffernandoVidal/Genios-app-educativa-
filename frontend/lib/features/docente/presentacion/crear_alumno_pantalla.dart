@@ -1,3 +1,5 @@
+import 'colores_docente.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -7,9 +9,7 @@ import '../../../core/red/excepcion_api.dart';
 import '../../../diseno/componentes/botones_juego.dart';
 import '../../../diseno/componentes/campo_genios.dart';
 import '../../../diseno/componentes/vistas_estado.dart';
-import '../../../diseno/tokens/colores.dart';
 import '../../../diseno/tokens/medidas.dart';
-import '../../../diseno/tokens/tipografia.dart';
 import '../dominio/repositorio_docente.dart';
 import 'componentes/componentes_docente.dart';
 import 'cubits_docente.dart';
@@ -104,11 +104,14 @@ class _CrearAlumnoPantallaState extends State<CrearAlumnoPantalla> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Crear alumno', style: Tipografia.titulo(30, peso: 800)),
+          Text('Crear alumno', style: TipografiaDocente.titulo(30, peso: 800)),
           const SizedBox(height: Espaciado.l),
           Text(
             'Primero necesitas una clase donde agregar a tus estudiantes.',
-            style: Tipografia.texto(18, color: ColoresGenios.textoSuave),
+            style: TipografiaDocente.texto(
+              18,
+              color: ColoresDocente.textoSuave,
+            ),
           ),
           const SizedBox(height: Espaciado.l),
           Align(
@@ -128,7 +131,7 @@ class _CrearAlumnoPantallaState extends State<CrearAlumnoPantalla> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Crear alumno', style: Tipografia.titulo(30, peso: 800)),
+        Text('Crear alumno', style: TipografiaDocente.titulo(30, peso: 800)),
         const SizedBox(height: Espaciado.l),
         CuadriculaAdaptable(
           anchoMinimo: 320,
@@ -193,9 +196,9 @@ class _CrearAlumnoPantallaState extends State<CrearAlumnoPantalla> {
                   const SizedBox(height: Espaciado.m),
                   Text(
                     'No pedimos dirección, teléfono ni fecha de nacimiento del estudiante.',
-                    style: Tipografia.texto(
+                    style: TipografiaDocente.texto(
                       14,
-                      color: ColoresGenios.textoSuave,
+                      color: ColoresDocente.textoSuave,
                     ),
                   ),
                   const SizedBox(height: Espaciado.m),
@@ -251,11 +254,11 @@ class _Opcion extends StatelessWidget {
       label: '$titulo. $texto',
       excludeSemantics: true,
       child: Material(
-        color: ColoresGenios.superficie,
+        color: ColoresDocente.superficie,
         shape: RoundedRectangleBorder(
           borderRadius: Radios.tarjeta,
           side: BorderSide(
-            color: elegida ? ColoresGenios.turquesa : Colors.transparent,
+            color: elegida ? ColoresDocente.acento : Colors.transparent,
             width: 3,
           ),
         ),
@@ -269,25 +272,28 @@ class _Opcion extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(icono, color: ColoresGenios.turquesa, size: 32),
+                    Icon(icono, color: ColoresDocente.acento, size: 32),
                     const SizedBox(width: Espaciado.m),
                     Expanded(
                       child: Text(
                         titulo,
-                        style: Tipografia.titulo(20, peso: 800),
+                        style: TipografiaDocente.titulo(20, peso: 800),
                       ),
                     ),
                     if (elegida)
                       const Icon(
                         Icons.check_circle_rounded,
-                        color: ColoresGenios.turquesa,
+                        color: ColoresDocente.acento,
                       ),
                   ],
                 ),
                 const SizedBox(height: Espaciado.s),
                 Text(
                   texto,
-                  style: Tipografia.texto(15, color: ColoresGenios.textoSuave),
+                  style: TipografiaDocente.texto(
+                    15,
+                    color: ColoresDocente.textoSuave,
+                  ),
                 ),
               ],
             ),
@@ -308,7 +314,7 @@ class _Invitacion extends StatelessWidget {
     if (aula == null) {
       return Text(
         'Elige una clase para ver su código.',
-        style: Tipografia.texto(16, color: ColoresGenios.textoSuave),
+        style: TipografiaDocente.texto(16, color: ColoresDocente.textoSuave),
       );
     }
     return Column(
@@ -316,17 +322,17 @@ class _Invitacion extends StatelessWidget {
       children: [
         Text(
           'Código de «${aula!.nombre}»:',
-          style: Tipografia.texto(17, peso: 700),
+          style: TipografiaDocente.texto(17, peso: 700),
         ),
         Row(
           children: [
             Expanded(
               child: SelectableText(
                 aula!.codigoAcceso ?? '—',
-                style: Tipografia.titulo(
+                style: TipografiaDocente.titulo(
                   40,
                   peso: 800,
-                  color: ColoresGenios.amarilloEspacial,
+                  color: ColoresDocente.destacado,
                 ),
               ),
             ),
@@ -343,7 +349,7 @@ class _Invitacion extends StatelessWidget {
         const SizedBox(height: Espaciado.s),
         Text(
           'El estudiante abre GENIOS con su cuenta, entra a «Salón», escribe este código y se une a tu clase. El código no da acceso a sus resultados por sí solo: los verás cuando ya sea parte de la clase.',
-          style: Tipografia.texto(15, color: ColoresGenios.textoSuave),
+          style: TipografiaDocente.texto(15, color: ColoresDocente.textoSuave),
         ),
       ],
     );

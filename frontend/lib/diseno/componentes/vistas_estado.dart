@@ -29,7 +29,7 @@ class VistaCarga extends StatelessWidget {
             Text(
               mensaje,
               textAlign: TextAlign.center,
-              style: Tipografia.titulo(22),
+              style: Tipografia.titulo(22, color: _colorTexto(context)),
             ),
           ],
         ),
@@ -74,7 +74,11 @@ class VistaError extends StatelessWidget {
               child: Text(
                 mensaje,
                 textAlign: TextAlign.center,
-                style: Tipografia.texto(20, peso: 800),
+                style: Tipografia.texto(
+                  20,
+                  peso: 800,
+                  color: _colorTexto(context),
+                ),
               ),
             ),
             const SizedBox(height: Espaciado.xl),
@@ -109,12 +113,16 @@ class VistaVacia extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icono, size: 64, color: ColoresGenios.textoSuave),
+            Icon(icono, size: 64, color: _colorTexto(context)),
             const SizedBox(height: Espaciado.l),
             Text(
               mensaje,
               textAlign: TextAlign.center,
-              style: Tipografia.texto(20, peso: 800),
+              style: Tipografia.texto(
+                20,
+                peso: 800,
+                color: _colorTexto(context),
+              ),
             ),
           ],
         ),
@@ -122,3 +130,7 @@ class VistaVacia extends StatelessWidget {
     );
   }
 }
+
+/// Color del texto del contexto: blanco lunar en la app, oscuro en el panel docente (fondo blanco).
+Color _colorTexto(BuildContext context) =>
+    DefaultTextStyle.of(context).style.color ?? ColoresGenios.texto;

@@ -1,3 +1,5 @@
+import 'colores_docente.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +11,6 @@ import '../../../diseno/componentes/botones_juego.dart';
 import '../../../diseno/componentes/vistas_estado.dart';
 import '../../../diseno/tokens/colores.dart';
 import '../../../diseno/tokens/medidas.dart';
-import '../../../diseno/tokens/tipografia.dart';
 import '../../cabina/presentacion/ventana_cabina.dart';
 import '../dominio/repositorio_docente.dart';
 import 'componentes/componentes_docente.dart';
@@ -73,7 +74,7 @@ class _Cabina extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: ColoresGenios.azulPetroleo,
+      color: ColoresDocente.superficie,
       borderRadius: Radios.tarjeta,
       child: Padding(
         padding: const EdgeInsets.all(Espaciado.xl),
@@ -101,14 +102,14 @@ class _Cabina extends StatelessWidget {
                 children: [
                   Text(
                     '¡Hola, $nombre!',
-                    style: Tipografia.titulo(32, peso: 800),
+                    style: TipografiaDocente.titulo(32, peso: 800),
                   ),
                   const SizedBox(height: Espaciado.s),
                   Text(
                     'Esta es tu cabina de control. Aquí ves cómo avanzan tus estudiantes, con datos reales de sus partidas.',
-                    style: Tipografia.texto(
+                    style: TipografiaDocente.texto(
                       18,
-                      color: ColoresGenios.textoSuave,
+                      color: ColoresDocente.textoSuave,
                     ),
                   ),
                 ],
@@ -143,7 +144,7 @@ class _Indicadores extends StatelessWidget {
               icono: Icons.groups_rounded,
               titulo: 'Estudiantes asignados',
               valor: '${datos.estudiantesAsignados}',
-              color: ColoresGenios.amarilloEspacial,
+              color: ColoresDocente.destacado,
             ),
             TarjetaIndicador(
               icono: Icons.bolt_rounded,
@@ -175,7 +176,10 @@ class _Indicadores extends StatelessWidget {
             padding: const EdgeInsets.only(top: Espaciado.l),
             child: Text(
               'Todavía no tienes clases. Crea la primera para obtener su código y empezar a sumar estudiantes.',
-              style: Tipografia.texto(18, color: ColoresGenios.textoSuave),
+              style: TipografiaDocente.texto(
+                18,
+                color: ColoresDocente.textoSuave,
+              ),
             ),
           ),
       ],
