@@ -16,3 +16,8 @@ public record RespuestaAutenticacion(string TokenAcceso, int ExpiraEnSegundos, U
 public record ResultadoSesion(RespuestaAutenticacion Respuesta, string TokenRenovacion, DateTime ExpiraTokenRenovacion);
 
 public record CodigoRestablecimientoDto(string Codigo, DateTime ExpiraEn);
+
+/// <summary>El docente da de alta a un estudiante en su aula. La contraseña la elige el propio estudiante con un código temporal.</summary>
+public record SolicitudCrearEstudianteEnAula(string NombreMostrar, string NombreUsuario);
+
+public record EstudianteCreadoDto(Guid Id, string NombreMostrar, string NombreUsuario, string CodigoActivacion, DateTime ExpiraEn);

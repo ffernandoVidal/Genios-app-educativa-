@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../core/sesion/sesion_app.dart';
+import '../features/acceso/presentacion/activar_pantalla.dart';
 import '../features/acceso/presentacion/bienvenida_pantalla.dart';
 import '../features/acceso/presentacion/docente_pantalla.dart';
 import '../features/acceso/presentacion/ingresar_pantalla.dart';
@@ -20,7 +21,14 @@ import '../features/salon/presentacion/salon_pantalla.dart';
 /// Esto solo ordena la navegación: la autorización real la hace siempre la API.
 GoRouter crearEnrutador(SesionApp sesion, {String googleClientId = ''}) {
   const soloSinSesion = {'/', '/jugar', '/ingresar'};
-  const publicas = {'/', '/jugar', '/ingresar', '/registro', '/docente'};
+  const publicas = {
+    '/',
+    '/jugar',
+    '/ingresar',
+    '/registro',
+    '/docente',
+    '/activar',
+  };
 
   return GoRouter(
     refreshListenable: sesion,
@@ -44,6 +52,7 @@ GoRouter crearEnrutador(SesionApp sesion, {String googleClientId = ''}) {
       GoRoute(path: '/', builder: (_, _) => const BienvenidaPantalla()),
       GoRoute(path: '/jugar', builder: (_, _) => const JugarPantalla()),
       GoRoute(path: '/ingresar', builder: (_, _) => const IngresarPantalla()),
+      GoRoute(path: '/activar', builder: (_, _) => const ActivarPantalla()),
       GoRoute(path: '/registro', builder: (_, _) => const RegistroPantalla()),
       GoRoute(
         path: '/docente',

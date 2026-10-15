@@ -31,5 +31,12 @@ abstract class RepositorioAcceso {
   /// Intercambia la credencial de Google (ID token) por una sesión docente. La API valida el token.
   Future<ResultadoAcceso> iniciarSesionGoogle(String idToken);
 
+  /// El estudiante elige su contraseña con el código que le dio su docente (`POST /estudiantes/restablecimiento-confirmar`).
+  Future<void> activarCuenta({
+    required String nombreUsuario,
+    required String codigo,
+    required String contrasenaNueva,
+  });
+
   Future<void> cerrarSesion();
 }

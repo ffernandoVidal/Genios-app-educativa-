@@ -1,0 +1,56 @@
+{
+  "initial_questions": 110,
+  "added_questions": 260,
+  "total_questions": 370,
+  "added_categories": 26,
+  "total_categories": 37,
+  "counts_by_subject": {
+    "Matemáticas": 80,
+    "Comunicación y Lenguaje": 100,
+    "Ciencias Naturales": 90,
+    "Ciencias Sociales": 100
+  },
+  "counts_new_categories": {
+    "MAT-PLAN": 10,
+    "MAT-CUER": 10,
+    "MAT-EST": 10,
+    "LEN-ORT2": 10,
+    "LEN-TIP": 10,
+    "LEN-PREF": 10,
+    "LEN-SUST": 10,
+    "LEN-PRON": 10,
+    "LEN-VERB": 10,
+    "LEN-ORAC": 10,
+    "LEN-CONJ": 10,
+    "NAT-PLANT": 10,
+    "NAT-ECO": 10,
+    "NAT-BIOS": 10,
+    "NAT-MAT": 10,
+    "NAT-ENER": 10,
+    "NAT-ELEC": 10,
+    "NAT-MAQ": 10,
+    "SOC-UNIV": 10,
+    "SOC-TIER": 10,
+    "SOC-CLIM": 10,
+    "SOC-POBL": 10,
+    "SOC-ECON": 10,
+    "SOC-COL": 10,
+    "SOC-INDEP": 10,
+    "SOC-MODER": 10
+  },
+  "checks": {
+    "unique_id": true,
+    "four_distinct_options": true,
+    "one_correct_option": true,
+    "correct_answer_matches_option": true,
+    "nonempty_explanation": true,
+    "math_spot_checks": true,
+    "hand_selected_distractors": 40
+  },
+  "limitations": [
+    "La revisión automática no sustituye validación pedagógica individual.",
+    "Los distractores fueron seleccionados de las respuestas de la misma misión; revisar si alguno resulta demasiado fácil o de otra clase semántica.",
+    "Categorías representan misiones, no cobertura exhaustiva de cada lección.",
+    "No se ha efectuado importación al backend ni compatibilidad con esquema físico PostgreSQL."
+  ]
+}

@@ -60,5 +60,16 @@ class RepositorioAccesoApi implements RepositorioAcceso {
   }
 
   @override
+  Future<void> activarCuenta({
+    required String nombreUsuario,
+    required String codigo,
+    required String contrasenaNueva,
+  }) => _api.enviar('/estudiantes/restablecimiento-confirmar', {
+    'nombreUsuario': nombreUsuario,
+    'codigo': codigo,
+    'contrasenaNueva': contrasenaNueva,
+  });
+
+  @override
   Future<void> cerrarSesion() => _api.enviar('/autenticacion/cerrar-sesion');
 }

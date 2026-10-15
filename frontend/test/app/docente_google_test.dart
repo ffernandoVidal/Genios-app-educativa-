@@ -118,7 +118,7 @@ void main() {
       await t.tap(find.text('CONTINUAR CON GOOGLE'));
       await t.pumpAndSettle();
 
-      await t.tap(find.text('CERRAR SESIÓN'));
+      await t.tap(find.text('Cerrar sesión'));
       await t.pumpAndSettle();
       expect(app.sesion.activa, isFalse);
       expect(find.text('JUGAR'), findsOneWidget);

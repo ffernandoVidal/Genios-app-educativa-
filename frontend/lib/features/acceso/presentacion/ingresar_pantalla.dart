@@ -101,6 +101,12 @@ class _IngresarPantallaState extends State<IngresarPantalla> {
               TextButton(
                 onPressed: estado.ocupado
                     ? null
+                    : () => context.push('/activar'),
+                child: const Text('Tengo un código de mi docente'),
+              ),
+              TextButton(
+                onPressed: estado.ocupado
+                    ? null
                     : () => context.push('/docente'),
                 child: const Text('Soy docente'),
               ),

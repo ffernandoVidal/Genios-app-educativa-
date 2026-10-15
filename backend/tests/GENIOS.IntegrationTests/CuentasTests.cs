@@ -80,6 +80,65 @@ public class CuentasTests(FixtureJuego f)
         Assert.Equal(HttpStatusCode.Forbidden, estadisticas.StatusCode);
     }
 
+    [Fact]
+    public async Task El_docente_agrega_un_estudiante_a_su_aula_y_este_elige_su_contrasena_con_el_codigo()
+    {
+        var docente = JuegoApi.ComoDocente(f, f.DocenteId);
+        var respuesta = await docente.Http.PostAsJsonAsync($"/api/v1/aulas/{f.AulaId}/estudiantes",
+            new SolicitudCrearEstudianteEnAula("Estudiante agregado", f.NombreUsuarioNuevo()));
+        Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
+        var creado = (await respuesta.Content.ReadFromJsonAsync<EstudianteCreadoDto>())!;
+        Assert.False(string.IsNullOrWhiteSpace(creado.CodigoActivacion));
+
+        var lista = (await docente.Http.GetFromJsonAsync<List<EstudianteAulaDto>>($"/api/v1/aulas/{f.AulaId}/estudiantes"))!;
+        Assert.Contains(lista, e => e.Id == creado.Id);
+
+        // Sin contraseña no se puede entrar.
+        var anonimo = f.Fabrica.CreateClient();
+        var intento = await anonimo.PostAsJsonAsync("/api/v1/autenticacion/estudiante/iniciar-sesion",
+            new SolicitudInicioSesionEstudiante(creado.NombreUsuario, "clave123"));
+        Assert.Equal(HttpStatusCode.Unauthorized, intento.StatusCode);
+
+        // Con el código elige su contraseña y entra.
+        var activar = await anonimo.PostAsJsonAsync("/api/v1/estudiantes/restablecimiento-confirmar",
+            new SolicitudConfirmarRestablecimiento(creado.NombreUsuario, creado.CodigoActivacion, "clave-nueva-1"));
+        Assert.Equal(HttpStatusCode.NoContent, activar.StatusCode);
+        var entrar = await anonimo.PostAsJsonAsync("/api/v1/autenticacion/estudiante/iniciar-sesion",
+            new SolicitudInicioSesionEstudiante(creado.NombreUsuario, "clave-nueva-1"));
+        Assert.Equal(HttpStatusCode.OK, entrar.StatusCode);
+
+        // El código es de un solo uso.
+        var repetido = await anonimo.PostAsJsonAsync("/api/v1/estudiantes/restablecimiento-confirmar",
+            new SolicitudConfirmarRestablecimiento(creado.NombreUsuario, creado.CodigoActivacion, "otra-clave-2"));
+        Assert.Equal(HttpStatusCode.BadRequest, repetido.StatusCode);
+    }
+
+    [Fact]
+    public async Task Un_docente_no_puede_agregar_estudiantes_al_aula_de_otro_ni_un_estudiante_a_ninguna()
+    {
+        var otroDocente = JuegoApi.ComoDocente(f, f.Docente2Id);
+        var ajena = await otroDocente.Http.PostAsJsonAsync($"/api/v1/aulas/{f.AulaId}/estudiantes",
+            new SolicitudCrearEstudianteEnAula("Intruso", f.NombreUsuarioNuevo()));
+        Assert.Equal(HttpStatusCode.NotFound, ajena.StatusCode);
+
+        var estudiante = await JuegoApi.NuevoEstudianteAsync(f);
+        var comoEstudiante = await estudiante.Http.PostAsJsonAsync($"/api/v1/aulas/{f.AulaId}/estudiantes",
+            new SolicitudCrearEstudianteEnAula("Intruso", f.NombreUsuarioNuevo()));
+        Assert.Equal(HttpStatusCode.Forbidden, comoEstudiante.StatusCode);
+    }
+
+    [Fact]
+    public async Task Agregar_un_estudiante_con_usuario_repetido_o_invalido_se_rechaza()
+    {
+        var docente = JuegoApi.ComoDocente(f, f.DocenteId);
+        var usuario = f.NombreUsuarioNuevo();
+        var uno = new SolicitudCrearEstudianteEnAula("Uno", usuario);
+        Assert.Equal(HttpStatusCode.OK, (await docente.Http.PostAsJsonAsync($"/api/v1/aulas/{f.AulaId}/estudiantes", uno)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await docente.Http.PostAsJsonAsync($"/api/v1/aulas/{f.AulaId}/estudiantes", uno)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await docente.Http.PostAsJsonAsync($"/api/v1/aulas/{f.AulaId}/estudiantes",
+            new SolicitudCrearEstudianteEnAula("Dos", "a b!"))).StatusCode);
+    }
+
     // --------------------------------------------------------------------- Google con un verificador simulado
     // La validación real de la firma de Google necesita un token vivo; aquí se simula solo ese paso y se prueba todo lo demás.
 

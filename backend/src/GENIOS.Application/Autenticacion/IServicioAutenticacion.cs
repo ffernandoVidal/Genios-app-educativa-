@@ -13,5 +13,8 @@ public interface IServicioAutenticacion
 
     /// <summary>El docente emite un código temporal de un solo uso para un estudiante de su aula.</summary>
     Task<CodigoRestablecimientoDto> EmitirCodigoRestablecimientoAsync(Guid docenteId, Guid aulaId, Guid estudianteId, ContextoSolicitud contexto, CancellationToken ct);
+    /// <summary>El docente crea la cuenta de un estudiante dentro de su aula y recibe un código para que elija su contraseña.</summary>
+    Task<EstudianteCreadoDto> CrearEstudianteEnAulaAsync(Guid docenteId, Guid aulaId, SolicitudCrearEstudianteEnAula solicitud, ContextoSolicitud contexto, CancellationToken ct);
+
     Task ConfirmarRestablecimientoAsync(SolicitudConfirmarRestablecimiento solicitud, ContextoSolicitud contexto, CancellationToken ct);
 }

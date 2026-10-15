@@ -15,6 +15,7 @@ class AppAbierta {
     required this.partida,
     required this.progreso,
     required this.salon,
+    required this.docente,
     required this.ajustes,
   });
 
@@ -24,6 +25,7 @@ class AppAbierta {
   final FalsoPartida partida;
   final FalsoProgreso progreso;
   final FalsoSalon salon;
+  final FalsoDocente docente;
   final AjustesApp ajustes;
 }
 
@@ -36,6 +38,7 @@ Future<AppAbierta> abrirApp(
   FalsoPartida? partida,
   FalsoProgreso? progreso,
   FalsoSalon? salon,
+  FalsoDocente? docente,
   SesionApp? sesion,
   AjustesApp? ajustes,
   Size? tamano,
@@ -52,6 +55,7 @@ Future<AppAbierta> abrirApp(
     partida: partida ?? FalsoPartida(),
     progreso: progreso ?? FalsoProgreso(),
     salon: salon ?? FalsoSalon(),
+    docente: docente ?? FalsoDocente(),
     ajustes: ajustes ?? AjustesApp(animaciones: false),
   );
   await t.pumpWidget(
@@ -62,6 +66,7 @@ Future<AppAbierta> abrirApp(
       repositorioPartida: app.partida,
       repositorioProgreso: app.progreso,
       repositorioSalon: app.salon,
+      repositorioDocente: app.docente,
       ajustes: app.ajustes,
       googleClientId: googleClientId,
     ),

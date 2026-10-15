@@ -92,6 +92,51 @@ public class ServicioAutenticacion(
         return (await CrearSesionAsync(usuario, null, ct)).Resultado;
     }
 
+    public async Task<EstudianteCreadoDto> CrearEstudianteEnAulaAsync(Guid docenteId, Guid aulaId, SolicitudCrearEstudianteEnAula solicitud, ContextoSolicitud contexto, CancellationToken ct)
+    {
+        var aulaDelDocente = await bd.Aulas.AnyAsync(a => a.Id == aulaId && a.DocenteId == docenteId && a.Estado == "activa" && a.EliminadaEn == null, ct);
+        if (!aulaDelDocente) throw Error(TipoError.NoEncontrado, "aula_no_encontrada", "No se encontró el aula.");
+
+        var nombreNormalizado = ReglasCuenta.NormalizarNombreUsuario(solicitud.NombreUsuario)
+            ?? throw Error(TipoError.Validacion, "nombre_usuario_invalido",
+                "El nombre de usuario debe tener de 3 a 30 caracteres: letras, números, punto o guion bajo.");
+        var nombreMostrar = (solicitud.NombreMostrar ?? "").Trim();
+        if (nombreMostrar.Length is 0 or > 120)
+            throw Error(TipoError.Validacion, "nombre_mostrar_invalido", "El nombre debe tener entre 1 y 120 caracteres.");
+
+        var rolId = await ObtenerRolIdAsync(CodigosRol.Estudiante, ct);
+        var usuario = new Usuarios
+        {
+            Id = Guid.NewGuid(),
+            NombreUsuario = solicitud.NombreUsuario.Trim(),
+            NombreUsuarioNormalizado = nombreNormalizado,
+            NombreMostrar = nombreMostrar,
+            MetodoRegistro = "usuario_contrasena",
+            Estado = "activo",
+            DebeCambiarContrasena = true,
+            ZonaHoraria = "America/Guatemala"
+        };
+        // La tabla exige un hash para las cuentas de usuario/contraseña: se guarda el de una clave aleatoria que nadie conoce
+        // hasta que el estudiante la reemplace con su código de activación.
+        usuario.ContrasenaHash = hasher.HashPassword(usuario, Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)));
+        bd.Usuarios.Add(usuario);
+        bd.PerfilesEstudiante.Add(new PerfilesEstudiante { UsuarioId = usuario.Id, Activo = true });
+        bd.UsuariosRoles.Add(new UsuariosRoles { UsuarioId = usuario.Id, RolId = rolId, AsignadoPor = docenteId });
+        bd.MiembrosAula.Add(new MiembrosAula { AulaId = aulaId, EstudianteId = usuario.Id, Estado = "activo" });
+        try
+        {
+            await bd.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException e) when (e.EsViolacionUnica())
+        {
+            throw Error(TipoError.Conflicto, "nombre_usuario_en_uso", "Ese nombre de usuario ya está en uso.");
+        }
+
+        await auditoria.RegistrarAsync("estudiante_creado_por_docente", docenteId, contexto, new { estudianteId = usuario.Id, aulaId });
+        var codigo = await EmitirCodigoRestablecimientoAsync(docenteId, aulaId, usuario.Id, contexto, ct);
+        return new EstudianteCreadoDto(usuario.Id, usuario.NombreMostrar, usuario.NombreUsuario!, codigo.Codigo, codigo.ExpiraEn);
+    }
+
     public async Task<CodigoRestablecimientoDto> EmitirCodigoRestablecimientoAsync(Guid docenteId, Guid aulaId, Guid estudianteId, ContextoSolicitud contexto, CancellationToken ct)
     {
         var esDelDocente = await bd.Aulas.AnyAsync(a => a.Id == aulaId && a.DocenteId == docenteId && a.Estado == "activa", ct);

@@ -9,6 +9,7 @@ import '../../../diseno/componentes/plantilla_pantalla.dart';
 import '../../../diseno/tokens/colores.dart';
 import '../../../diseno/tokens/medidas.dart';
 import '../../../diseno/tokens/tipografia.dart';
+import '../../docente/presentacion/panel_docente_pantalla.dart';
 import 'acceso_cubit.dart';
 import 'boton_google/boton_google.dart';
 import 'mensaje_error_acceso.dart';
@@ -25,6 +26,7 @@ class DocentePantalla extends StatelessWidget {
   Widget build(BuildContext context) {
     final sesion = context.read<FuenteModoSesion>();
     final dentro = sesion.modo == ModoSesion.docente;
+    if (dentro) return const PanelDocentePantalla();
     return PlantillaPantalla(
       titulo: 'Acceso docente',
       hijo: BlocBuilder<AccesoCubit, EstadoAcceso>(

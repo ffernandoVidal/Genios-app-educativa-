@@ -130,3 +130,9 @@ Recorrido: Bienvenida → (invitado: solo apodo) → Cabina → JUGAR → Materi
 - **Fondo:** se integró la ilustración `assets/imagenes/superficie_lunar.jpg` (735×737 px, estilo plano) con `BoxFit.cover` anclada abajo. Al ser de baja resolución puede verse suave en pantallas grandes; conviene una versión de mayor resolución.
 - **Pruebas:** backend 31 unitarias + 30 integración (incluye 8 de cuentas); frontend 115. Ver informe en el chat.
 - **Pendiente (módulo de contenido educativo):** NO integrado; ver propuesta aparte (choca con reglas ya implementadas).
+
+## Panel docente y alta de estudiantes (2026-10-14)
+- Front `lib/features/docente/` (dominio / datos / presentación) y ruta `/docente` (muestra el panel si la sesión es docente): aulas propias, crear aula, código de acceso copiable, lista de estudiantes, **agregar estudiante** y **nuevo código**.
+- Backend: `POST /aulas/{aulaId}/estudiantes` (sin migración). La restricción `ck_usuarios_credenciales` exige hash para cuentas de usuario/contraseña, por eso se guarda el hash de una clave aleatoria y el estudiante la reemplaza con su código en `/activar` («Tengo un código de mi docente»).
+- Pruebas: backend +3 (alta, ajeno/estudiante, duplicado/inválido); front +8 (panel, activación). No existe aún: retirar estudiantes en la UI (el endpoint sí), estadísticas del aula en el panel.
+- Banco educativo V2 (370 preguntas): **solo Fase 1 (auditoría)**; los JSON están en `data/educational/` (fuera de los assets de Flutter). Nada importado ni migrado.

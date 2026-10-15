@@ -37,6 +37,11 @@ public class AulasController(IServicioAulas aulas, IServicioAutenticacion autent
     public async Task<ActionResult<IReadOnlyList<EstudianteAulaDto>>> ListarEstudiantes(Guid aulaId, CancellationToken ct) =>
         Ok(await aulas.ListarEstudiantesAsync(UsuarioId, aulaId, ct));
 
+    [HttpPost("{aulaId:guid}/estudiantes")]
+    [Authorize(Roles = CodigosRol.Docente)]
+    public async Task<ActionResult<EstudianteCreadoDto>> CrearEstudiante(Guid aulaId, SolicitudCrearEstudianteEnAula solicitud, CancellationToken ct) =>
+        await autenticacion.CrearEstudianteEnAulaAsync(UsuarioId, aulaId, solicitud, Contexto, ct);
+
     [HttpDelete("{aulaId:guid}/estudiantes/{estudianteId:guid}")]
     [Authorize(Roles = CodigosRol.Docente)]
     public async Task<IActionResult> RetirarEstudiante(Guid aulaId, Guid estudianteId, CancellationToken ct)

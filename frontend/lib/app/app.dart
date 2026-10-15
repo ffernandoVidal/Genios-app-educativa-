@@ -10,6 +10,7 @@ import '../features/acceso/presentacion/acceso_cubit.dart';
 import '../features/catalogo/dominio/repositorio_catalogo.dart';
 import '../features/partida/dominio/repositorio_partida.dart';
 import '../features/progreso/dominio/repositorio_progreso.dart';
+import '../features/docente/dominio/repositorio_docente.dart';
 import '../features/salon/dominio/repositorio_salon.dart';
 import 'enrutador.dart';
 
@@ -23,6 +24,7 @@ class AppGenios extends StatefulWidget {
     required this.repositorioPartida,
     required this.repositorioProgreso,
     required this.repositorioSalon,
+    required this.repositorioDocente,
     this.ajustes,
     this.googleClientId = '',
   });
@@ -33,6 +35,7 @@ class AppGenios extends StatefulWidget {
   final RepositorioPartida repositorioPartida;
   final RepositorioProgreso repositorioProgreso;
   final RepositorioSalon repositorioSalon;
+  final RepositorioDocente repositorioDocente;
 
   /// Preferencias visuales; si no se indican se usan las predeterminadas.
   final AjustesApp? ajustes;
@@ -78,6 +81,9 @@ class _AppGeniosState extends State<AppGenios> {
         ),
         RepositoryProvider<RepositorioSalon>.value(
           value: widget.repositorioSalon,
+        ),
+        RepositoryProvider<RepositorioDocente>.value(
+          value: widget.repositorioDocente,
         ),
       ],
       child: BlocProvider(

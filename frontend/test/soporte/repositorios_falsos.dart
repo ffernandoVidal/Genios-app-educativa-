@@ -1,3 +1,4 @@
+import 'package:genios_app/features/docente/dominio/repositorio_docente.dart';
 import 'package:genios_app/core/red/excepcion_api.dart';
 import 'package:genios_app/core/sesion/sesion_app.dart';
 import 'package:genios_app/features/acceso/dominio/repositorio_acceso.dart';
@@ -89,6 +90,19 @@ class FalsoAcceso implements RepositorioAcceso {
       roles: ['estudiante'],
       nombreMostrar: 'Ana',
     );
+  }
+
+  ExcepcionApi? errorActivacion;
+  String? ultimoCodigoActivacion;
+
+  @override
+  Future<void> activarCuenta({
+    required String nombreUsuario,
+    required String codigo,
+    required String contrasenaNueva,
+  }) async {
+    ultimoCodigoActivacion = codigo;
+    if (errorActivacion != null) throw errorActivacion!;
   }
 
   ExcepcionApi? errorGoogle;
@@ -389,5 +403,72 @@ class FalsoSalon implements RepositorioSalon {
     );
     _aulas.add(aula);
     return aula;
+  }
+}
+
+class FalsoDocente implements RepositorioDocente {
+  FalsoDocente({
+    List<AulaDocente>? aulas,
+    Map<String, List<EstudianteDeAula>>? estudiantes,
+  }) : _aulas = aulas ?? [],
+       _estudiantes = estudiantes ?? {};
+
+  final List<AulaDocente> _aulas;
+  final Map<String, List<EstudianteDeAula>> _estudiantes;
+  ExcepcionApi? errorAgregar;
+  String? ultimoUsuarioAgregado;
+  int codigosNuevos = 0;
+
+  @override
+  Future<List<AulaDocente>> aulas() async => List.of(_aulas);
+
+  @override
+  Future<AulaDocente> crearAula(String nombre) async {
+    final aula = AulaDocente(
+      id: 'aula-${_aulas.length + 1}',
+      nombre: nombre,
+      codigoAcceso: 'K${4000 + _aulas.length}',
+    );
+    _aulas.add(aula);
+    return aula;
+  }
+
+  @override
+  Future<List<EstudianteDeAula>> estudiantes(String aulaId) async =>
+      List.of(_estudiantes[aulaId] ?? []);
+
+  @override
+  Future<CodigoActivacion> agregarEstudiante(
+    String aulaId, {
+    required String nombreMostrar,
+    required String nombreUsuario,
+  }) async {
+    if (errorAgregar != null) throw errorAgregar!;
+    ultimoUsuarioAgregado = nombreUsuario;
+    (_estudiantes[aulaId] ??= []).add(
+      EstudianteDeAula(
+        id: 'e-$nombreUsuario',
+        nombreMostrar: nombreMostrar,
+        nombreUsuario: nombreUsuario,
+      ),
+    );
+    return CodigoActivacion(
+      nombreUsuario: nombreUsuario,
+      codigo: 'ABCD2345',
+      expiraEn: DateTime.now().toUtc().add(const Duration(minutes: 60)),
+    );
+  }
+
+  @override
+  Future<CodigoActivacion> nuevoCodigo(
+    String aulaId,
+    EstudianteDeAula estudiante,
+  ) async {
+    codigosNuevos++;
+    return CodigoActivacion(
+      nombreUsuario: estudiante.nombreUsuario ?? '',
+      codigo: 'NUEVO9876',
+      expiraEn: DateTime.now().toUtc().add(const Duration(minutes: 60)),
+    );
   }
 }
