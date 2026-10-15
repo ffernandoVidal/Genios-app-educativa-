@@ -9,6 +9,7 @@ import 'features/acceso/datos/repositorio_acceso_api.dart';
 import 'features/catalogo/datos/repositorio_catalogo_api.dart';
 import 'features/partida/datos/repositorio_partida_api.dart';
 import 'features/progreso/datos/repositorio_progreso_api.dart';
+import 'features/salon/datos/repositorio_salon_api.dart';
 
 void main() {
   final sesion = SesionApp();
@@ -27,6 +28,7 @@ void main() {
       repositorioCatalogo: RepositorioCatalogoApi(cliente),
       repositorioPartida: RepositorioPartidaApi(cliente),
       repositorioProgreso: RepositorioProgresoApi(cliente),
+      repositorioSalon: RepositorioSalonApi(cliente),
     ),
   );
 }

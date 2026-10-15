@@ -112,3 +112,11 @@ Ver `docs/contenido-inicial.md`. `002_contenido_inicial.sql` es idempotente (com
 2. Una captura de la referencia visual para ajustar el diseño.
 3. Decisiones abiertas: explicación de la pregunta, metadatos del mapa en base de datos, nombre definitivo de Lenguaje.
 4. Siguiente incremento: panel docente y reanudación de partidas.
+
+## Frontend — incremento 3: rediseño espacial v2 (2026-10-14)
+Recorrido: Bienvenida → (invitado: solo apodo) → Cabina → JUGAR → Materias → Misiones → Partida → Resultados. Menú lateral: Perfil, Salón, Ajustes.
+- Sistema visual propio en `lib/diseno/` (paleta oficial, Baloo 2 + Nunito, astronauta y paisaje dibujados como vectores). El fondo acepta una ilustración definitiva (`FondoEspacial.imagen`) cuando se entregue.
+- Conectado a la API real: acceso, catálogo/mapa, partida, progreso, estadísticas, aula (`/aulas/mi-aula`, `/aulas/unirse`).
+- Verificado: `flutter analyze` sin avisos, 107 pruebas pasando (incluye 4 tamaños de pantalla, texto grande y semántica), `flutter build web --release` correcto.
+- NO verificado: el rediseño contra la API real con contenido (Neon sigue sin categorías; `002_contenido_inicial.sql` sin aplicar); apariencia en navegador real.
+- Limitaciones: sin sonido; ajustes solo en memoria; apodo del invitado no se envía al servidor; panel docente y Google login pendientes; la API no entrega nivel ni reintentos por partida.

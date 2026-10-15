@@ -2,8 +2,8 @@ import '../../../core/estado/estado_carga.dart';
 import '../dominio/modelos_catalogo.dart';
 import '../dominio/repositorio_catalogo.dart';
 
-class UniversoCubit extends CubitCarga<List<Asignatura>> {
-  UniversoCubit(this._repositorio);
+class MateriasCubit extends CubitCarga<List<Asignatura>> {
+  MateriasCubit(this._repositorio);
 
   final RepositorioCatalogo _repositorio;
 
@@ -11,8 +11,8 @@ class UniversoCubit extends CubitCarga<List<Asignatura>> {
   Future<List<Asignatura>> obtener() => _repositorio.asignaturas();
 }
 
-class MapaMateriaCubit extends CubitCarga<MapaMateria> {
-  MapaMateriaCubit(this._repositorio, this._asignaturaId);
+class MisionesCubit extends CubitCarga<MapaMateria> {
+  MisionesCubit(this._repositorio, this._asignaturaId);
 
   final RepositorioCatalogo _repositorio;
   final int _asignaturaId;

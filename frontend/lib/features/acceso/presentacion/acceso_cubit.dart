@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/red/excepcion_api.dart';
 import '../../../core/sesion/sesion_app.dart';
 import '../dominio/repositorio_acceso.dart';
+import '../dominio/validacion_apodo.dart';
 
 class EstadoAcceso extends Equatable {
   const EstadoAcceso({this.ocupado = false, this.mensajeError});
@@ -21,10 +22,19 @@ class AccesoCubit extends Cubit<EstadoAcceso> {
   final RepositorioAcceso _repositorio;
   final SesionApp _sesion;
 
-  Future<void> entrarComoInvitado() => _ejecutar(() async {
-    await _repositorio.crearSesionInvitado();
-    _sesion.iniciarInvitado();
-  });
+  /// Entrar como invitado: solo hace falta un nombre o apodo, que se queda en el cliente.
+  /// La sesión segura la crea el servidor (cookie HttpOnly); el apodo no la identifica ni la sustituye.
+  Future<void> entrarComoInvitado(String apodo) async {
+    final error = ValidacionApodo.validar(apodo);
+    if (error != null) {
+      emit(EstadoAcceso(mensajeError: error));
+      return;
+    }
+    await _ejecutar(() async {
+      await _repositorio.crearSesionInvitado();
+      _sesion.iniciarInvitado(nombre: apodo.trim());
+    });
+  }
 
   Future<void> iniciarSesion(String nombreUsuario, String contrasena) async {
     if (nombreUsuario.trim().isEmpty || contrasena.isEmpty) {
@@ -41,6 +51,7 @@ class AccesoCubit extends Cubit<EstadoAcceso> {
       _sesion.iniciarCuenta(
         tokenAcceso: resultado.tokenAcceso,
         roles: resultado.roles,
+        nombre: resultado.nombreMostrar,
       );
     });
   }
@@ -68,6 +79,7 @@ class AccesoCubit extends Cubit<EstadoAcceso> {
       _sesion.iniciarCuenta(
         tokenAcceso: resultado.tokenAcceso,
         roles: resultado.roles,
+        nombre: resultado.nombreMostrar,
       );
     });
   }

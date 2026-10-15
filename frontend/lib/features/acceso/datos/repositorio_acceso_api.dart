@@ -45,6 +45,7 @@ class RepositorioAccesoApi implements RepositorioAcceso {
     return ResultadoAcceso(
       tokenAcceso: datos['tokenAcceso'] as String,
       roles: (usuario['roles'] as List<dynamic>).cast<String>(),
+      nombreMostrar: usuario['nombreMostrar'] as String,
     );
   }
 

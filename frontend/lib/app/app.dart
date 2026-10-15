@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/ajustes/ajustes_app.dart';
 import '../core/sesion/sesion_app.dart';
+import '../diseno/tema/tema_genios.dart';
 import '../features/acceso/dominio/repositorio_acceso.dart';
 import '../features/acceso/presentacion/acceso_cubit.dart';
 import '../features/catalogo/dominio/repositorio_catalogo.dart';
 import '../features/partida/dominio/repositorio_partida.dart';
 import '../features/progreso/dominio/repositorio_progreso.dart';
+import '../features/salon/dominio/repositorio_salon.dart';
 import 'enrutador.dart';
-import 'tema/tema_genios.dart';
 
 /// Raíz de la app. Recibe sus dependencias para poder probarla con repositorios falsos.
 class AppGenios extends StatefulWidget {
@@ -20,6 +22,8 @@ class AppGenios extends StatefulWidget {
     required this.repositorioCatalogo,
     required this.repositorioPartida,
     required this.repositorioProgreso,
+    required this.repositorioSalon,
+    this.ajustes,
   });
 
   final SesionApp sesion;
@@ -27,6 +31,10 @@ class AppGenios extends StatefulWidget {
   final RepositorioCatalogo repositorioCatalogo;
   final RepositorioPartida repositorioPartida;
   final RepositorioProgreso repositorioProgreso;
+  final RepositorioSalon repositorioSalon;
+
+  /// Preferencias visuales; si no se indican se usan las predeterminadas.
+  final AjustesApp? ajustes;
 
   @override
   State<AppGenios> createState() => _AppGeniosState();
@@ -34,6 +42,7 @@ class AppGenios extends StatefulWidget {
 
 class _AppGeniosState extends State<AppGenios> {
   late final GoRouter _enrutador = crearEnrutador(widget.sesion);
+  late final AjustesApp _ajustes = widget.ajustes ?? AjustesApp();
 
   @override
   void dispose() {
@@ -60,6 +69,9 @@ class _AppGeniosState extends State<AppGenios> {
         RepositoryProvider<RepositorioProgreso>.value(
           value: widget.repositorioProgreso,
         ),
+        RepositoryProvider<RepositorioSalon>.value(
+          value: widget.repositorioSalon,
+        ),
       ],
       child: BlocProvider(
         create: (_) => AccesoCubit(widget.repositorioAcceso, widget.sesion),
@@ -68,6 +80,19 @@ class _AppGeniosState extends State<AppGenios> {
           debugShowCheckedModeBanner: false,
           theme: TemaGenios.construir(),
           routerConfig: _enrutador,
+          // Los ajustes quedan por encima del Navigator: llegan a todas las pantallas y a los diálogos.
+          builder: (context, hijo) => AjustesScope(
+            ajustes: _ajustes,
+            child: ListenableBuilder(
+              listenable: _ajustes,
+              builder: (context, _) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(_ajustes.escalaTexto)),
+                child: hijo!,
+              ),
+            ),
+          ),
         ),
       ),
     );

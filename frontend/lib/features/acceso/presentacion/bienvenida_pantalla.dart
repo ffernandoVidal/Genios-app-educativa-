@@ -1,108 +1,113 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/tema/tema_genios.dart';
-import '../../../core/widgets/fondo_espacial.dart';
-import 'acceso_cubit.dart';
+import '../../../diseno/componentes/astronauta_genios.dart';
+import '../../../diseno/componentes/botones_juego.dart';
+import '../../../diseno/componentes/fondo_espacial.dart';
+import '../../../diseno/tokens/colores.dart';
+import '../../../diseno/tokens/medidas.dart';
+import '../../../diseno/tokens/tipografia.dart';
 
+/// Pantalla 1: el logo, el astronauta sobre la Luna y solo dos decisiones (Ley de Hick):
+/// JUGAR (principal) e INICIAR SESIÓN.
 class BienvenidaPantalla extends StatelessWidget {
   const BienvenidaPantalla({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
     return Scaffold(
       body: FondoEspacial(
+        variante: VarianteFondo.paisaje,
         hijo: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 440),
-                child: BlocBuilder<AccesoCubit, EstadoAcceso>(
-                  builder: (context, estado) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const ExcludeSemantics(
-                        child: Icon(
-                          Icons.rocket_launch_rounded,
-                          size: 96,
-                          color: ColoresGenios.acento,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'GENIOS',
-                        textAlign: TextAlign.center,
-                        style: textos.displayMedium?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 4,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Explora el universo del saber',
-                        textAlign: TextAlign.center,
-                        style: textos.titleLarge?.copyWith(
-                          color: ColoresGenios.textoSuave,
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-                      FilledButton.icon(
-                        onPressed: estado.ocupado
-                            ? null
-                            : () => context
-                                  .read<AccesoCubit>()
-                                  .entrarComoInvitado(),
-                        icon: estado.ocupado
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 3,
-                                ),
-                              )
-                            : const Icon(Icons.play_arrow_rounded),
-                        label: const Text('Jugar como invitado'),
-                      ),
-                      const SizedBox(height: 16),
-                      OutlinedButton.icon(
-                        onPressed: estado.ocupado
-                            ? null
-                            : () => context.push('/ingresar'),
-                        icon: const Icon(Icons.login_rounded),
-                        label: const Text('Ya tengo mi usuario'),
-                      ),
-                      const SizedBox(height: 16),
-                      TextButton.icon(
-                        onPressed: estado.ocupado
-                            ? null
-                            : () => context.push('/registro'),
-                        icon: const Icon(Icons.meeting_room_rounded),
-                        label: const Text('Tengo un código de aula'),
-                      ),
-                      if (estado.mensajeError != null) ...[
-                        const SizedBox(height: 20),
-                        Semantics(
-                          liveRegion: true,
-                          child: Text(
-                            estado.mensajeError!,
-                            textAlign: TextAlign.center,
-                            style: textos.titleMedium?.copyWith(
-                              color: ColoresGenios.error,
-                            ),
+          child: LayoutBuilder(
+            builder: (context, restricciones) {
+              final compacto = restricciones.maxHeight < 640;
+              final alturaAstronauta =
+                  (restricciones.maxHeight * (compacto ? 0.28 : 0.34)).clamp(
+                    130.0,
+                    320.0,
+                  );
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: restricciones.maxHeight,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: Espaciado.pantalla,
+                      vertical: Espaciado.l,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const _Logotipo(),
+                        const SizedBox(height: Espaciado.s),
+                        Text(
+                          '¡Hola, explorador! Aprende jugando por el espacio.',
+                          textAlign: TextAlign.center,
+                          style: Tipografia.texto(
+                            20,
+                            peso: 800,
+                            color: ColoresGenios.blancoLunar,
                           ),
                         ),
+                        SizedBox(height: compacto ? Espaciado.s : Espaciado.l),
+                        AstronautaGenios(
+                          pose: PoseAstronauta.saludo,
+                          alto: alturaAstronauta,
+                        ),
+                        SizedBox(height: compacto ? Espaciado.s : Espaciado.l),
+                        BotonPrincipalJuego(
+                          texto: 'JUGAR',
+                          icono: Icons.rocket_launch_rounded,
+                          alPulsar: () => context.push('/jugar'),
+                        ),
+                        const SizedBox(height: Espaciado.l),
+                        BotonSecundarioJuego(
+                          texto: 'INICIAR SESIÓN',
+                          icono: Icons.login_rounded,
+                          alPulsar: () => context.push('/ingresar'),
+                        ),
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _Logotipo extends StatelessWidget {
+  const _Logotipo();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      header: true,
+      label: 'GENIOS',
+      excludeSemantics: true,
+      child: Text(
+        'GENIOS',
+        style:
+            Tipografia.titulo(
+              64,
+              peso: 800,
+              color: ColoresGenios.amarilloEspacial,
+            ).copyWith(
+              letterSpacing: 4,
+              shadows: const [
+                Shadow(color: Color(0xFFB37F00), offset: Offset(0, 5)),
+                Shadow(
+                  color: Colors.black54,
+                  blurRadius: 16,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
       ),
     );
   }

@@ -5,14 +5,20 @@ Interfaz infantil (9 a 12 años) que consume la API ASP.NET Core. No contiene re
 ## Estructura
 ```
 lib/
-  app/          app, rutas (go_router), tema espacial, configuración
-  core/         cliente HTTP (cookies, anti-CSRF, renovación, Problem Details), sesión, estados y widgets comunes
+  app/          app, rutas (go_router), configuración
+  diseno/       sistema visual: tokens (colores, medidas, tipografía), tema y componentes reutilizables
+                (fondo espacial, astronauta, botones, tarjetas de materia y misión, cabecera, menú lateral…)
+  core/         cliente HTTP (cookies, anti-CSRF, renovación), sesión, ajustes, estados comunes
   features/
-    acceso/     bienvenida, invitado, inicio de sesión y registro con código de aula   (dominio / datos / presentación)
-    catalogo/   universo de materias y mapa de misiones con estados                      (dominio / datos / presentación)
-    partida/    misión de 10 preguntas: respuesta, retroalimentación, mecha y resultado  (dominio / datos / presentación)
-    progreso/   insignias de puntos y tiempo, y pantalla "Mi progreso"                   (dominio / datos / presentación)
-test/           cliente HTTP, repositorios, cubits y flujos de pantallas (con repositorios falsos en test/soporte)
+    acceso/     bienvenida, JUGAR como invitado (solo apodo), inicio de sesión, registro, acceso docente (pendiente)
+    cabina/     cabina del astronauta con el botón JUGAR y el menú lateral
+    catalogo/   materias (tarjetas) y misiones de cada materia con estados
+    partida/    misión de 10 preguntas: respuesta, retroalimentación, mecha, resultados e invitación a registrarse
+    progreso/   perfil: puntos, tiempo del día y avance por materia
+    salon/      unirse al aula con código y ver el aula actual
+    ajustes/    animaciones, texto grande, sonido (próximamente), cerrar sesión
+test/           cliente HTTP, repositorios, cubits, pantallas, diseño adaptable y accesibilidad (repositorios falsos en test/soporte)
+assets/fuentes  Baloo 2 y Nunito (licencia OFL incluida)
 ```
 Estado con `flutter_bloc` (Cubit); un repositorio por *feature* detrás de una interfaz.
 

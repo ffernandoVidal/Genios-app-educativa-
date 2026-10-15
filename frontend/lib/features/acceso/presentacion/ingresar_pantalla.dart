@@ -2,10 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/tema/tema_genios.dart';
-import '../../../core/widgets/fondo_espacial.dart';
+import '../../../diseno/componentes/astronauta_genios.dart';
+import '../../../diseno/componentes/botones_juego.dart';
+import '../../../diseno/componentes/campo_genios.dart';
+import '../../../diseno/componentes/plantilla_pantalla.dart';
+import '../../../diseno/tokens/medidas.dart';
+import '../../../diseno/tokens/tipografia.dart';
 import 'acceso_cubit.dart';
+import 'mensaje_error_acceso.dart';
 
+/// Iniciar sesión de estudiante con usuario y contraseña. Desde aquí se puede crear una cuenta;
+/// el acceso docente con Google es un flujo separado.
 class IngresarPantalla extends StatefulWidget {
   const IngresarPantalla({super.key});
 
@@ -39,82 +46,65 @@ class _IngresarPantallaState extends State<IngresarPantalla> {
 
   @override
   Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: 'Volver',
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text('Entrar'),
-      ),
-      extendBodyBehindAppBar: true,
-      body: FondoEspacial(
-        hijo: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 440),
-                child: BlocBuilder<AccesoCubit, EstadoAcceso>(
-                  builder: (context, estado) => AutofillGroup(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          '¡Qué bueno verte de nuevo!',
-                          textAlign: TextAlign.center,
-                          style: textos.headlineSmall,
-                        ),
-                        const SizedBox(height: 24),
-                        TextField(
-                          controller: _usuario,
-                          enabled: !estado.ocupado,
-                          autofillHints: const [AutofillHints.username],
-                          textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Tu usuario',
-                            prefixIcon: Icon(Icons.person_rounded),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: _contrasena,
-                          enabled: !estado.ocupado,
-                          obscureText: true,
-                          autofillHints: const [AutofillHints.password],
-                          onSubmitted: (_) => _enviar(),
-                          decoration: const InputDecoration(
-                            labelText: 'Tu contraseña',
-                            prefixIcon: Icon(Icons.lock_rounded),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        FilledButton(
-                          onPressed: estado.ocupado ? null : _enviar,
-                          child: Text(estado.ocupado ? 'Entrando…' : 'Entrar'),
-                        ),
-                        if (estado.mensajeError != null) ...[
-                          const SizedBox(height: 20),
-                          Semantics(
-                            liveRegion: true,
-                            child: Text(
-                              estado.mensajeError!,
-                              textAlign: TextAlign.center,
-                              style: textos.titleMedium?.copyWith(
-                                color: ColoresGenios.error,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+    return PlantillaPantalla(
+      titulo: 'Iniciar sesión',
+      hijo: BlocBuilder<AccesoCubit, EstadoAcceso>(
+        builder: (context, estado) => AutofillGroup(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Center(
+                child: AstronautaGenios(pose: PoseAstronauta.saludo, alto: 140),
+              ),
+              const SizedBox(height: Espaciado.m),
+              Text(
+                '¡Qué bueno verte de nuevo!',
+                textAlign: TextAlign.center,
+                style: Tipografia.titulo(26),
+              ),
+              const SizedBox(height: Espaciado.l),
+              CampoGenios(
+                controlador: _usuario,
+                etiqueta: 'Tu usuario',
+                icono: Icons.person_rounded,
+                habilitado: !estado.ocupado,
+                autocompletar: const [AutofillHints.username],
+              ),
+              const SizedBox(height: Espaciado.l),
+              CampoGenios(
+                controlador: _contrasena,
+                etiqueta: 'Tu contraseña',
+                icono: Icons.lock_rounded,
+                habilitado: !estado.ocupado,
+                oculto: true,
+                autocompletar: const [AutofillHints.password],
+                alEnviar: _enviar,
+              ),
+              const SizedBox(height: Espaciado.xl),
+              Center(
+                child: BotonPrincipalJuego(
+                  texto: 'ENTRAR',
+                  icono: Icons.login_rounded,
+                  ocupado: estado.ocupado,
+                  alPulsar: _enviar,
                 ),
               ),
-            ),
+              MensajeErrorAcceso(mensaje: estado.mensajeError),
+              const SizedBox(height: Espaciado.l),
+              TextButton(
+                onPressed: estado.ocupado
+                    ? null
+                    : () => context.push('/registro'),
+                child: const Text('Crear una cuenta'),
+              ),
+              TextButton(
+                onPressed: estado.ocupado
+                    ? null
+                    : () => context.push('/docente'),
+                child: const Text('Soy docente'),
+              ),
+            ],
           ),
         ),
       ),

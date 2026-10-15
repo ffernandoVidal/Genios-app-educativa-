@@ -7,6 +7,7 @@ import 'package:genios_app/features/partida/dominio/modelos_partida.dart';
 import 'package:genios_app/features/partida/dominio/repositorio_partida.dart';
 import 'package:genios_app/features/progreso/dominio/modelos_progreso.dart';
 import 'package:genios_app/features/progreso/dominio/repositorio_progreso.dart';
+import 'package:genios_app/features/salon/dominio/repositorio_salon.dart';
 
 const materiasDePrueba = [
   Asignatura(id: 1, codigo: 'MATEMATICAS', nombre: 'Matematicas'),
@@ -67,7 +68,11 @@ class FalsoAcceso implements RepositorioAcceso {
   ) async {
     ultimoUsuario = nombreUsuario;
     if (errorInicioSesion != null) throw errorInicioSesion!;
-    return const ResultadoAcceso(tokenAcceso: 'TOKEN', roles: ['estudiante']);
+    return const ResultadoAcceso(
+      tokenAcceso: 'TOKEN',
+      roles: ['estudiante'],
+      nombreMostrar: 'Ana',
+    );
   }
 
   @override
@@ -79,7 +84,11 @@ class FalsoAcceso implements RepositorioAcceso {
   }) async {
     ultimoCodigoAula = codigoAula;
     if (errorRegistro != null) throw errorRegistro!;
-    return const ResultadoAcceso(tokenAcceso: 'TOKEN', roles: ['estudiante']);
+    return const ResultadoAcceso(
+      tokenAcceso: 'TOKEN',
+      roles: ['estudiante'],
+      nombreMostrar: 'Ana',
+    );
   }
 
   @override
@@ -142,6 +151,10 @@ class FalsoPartida implements RepositorioPartida {
     clavesDeCreacion.add(claveOperacion);
     if (errorAlCrear != null) throw errorAlCrear!;
     creadas++;
+    _actual = 1; // cada partida nueva empieza desde la primera pregunta
+    _errores = 0;
+    _mecha = null;
+    _venciada = false;
     return _estado();
   }
 
@@ -339,3 +352,27 @@ MapaMateria mapaDeMatematicas() => const MapaMateria(
     ),
   ],
 );
+
+class FalsoSalon implements RepositorioSalon {
+  FalsoSalon({List<AulaSalon>? aulas}) : _aulas = aulas ?? [];
+
+  final List<AulaSalon> _aulas;
+  ExcepcionApi? errorAlUnirse;
+  String? ultimoCodigo;
+
+  @override
+  Future<List<AulaSalon>> misAulas() async => List.of(_aulas);
+
+  @override
+  Future<AulaSalon> unirse(String codigoAula) async {
+    ultimoCodigo = codigoAula;
+    if (errorAlUnirse != null) throw errorAlUnirse!;
+    final aula = const AulaSalon(
+      id: 'a1',
+      nombre: 'Aula de la maestra Luz',
+      estado: 'activa',
+    );
+    _aulas.add(aula);
+    return aula;
+  }
+}

@@ -128,10 +128,10 @@ void main() {
     });
   });
 
-  group('UniversoCubit', () {
-    blocTest<UniversoCubit, EstadoCarga<List<Asignatura>>>(
+  group('MateriasCubit', () {
+    blocTest<MateriasCubit, EstadoCarga<List<Asignatura>>>(
       'emite cargando y luego las asignaturas',
-      build: () => UniversoCubit(FalsoCatalogo()),
+      build: () => MateriasCubit(FalsoCatalogo()),
       act: (c) => c.cargar(),
       expect: () => [
         const Cargando<List<Asignatura>>(),
@@ -139,10 +139,10 @@ void main() {
       ],
     );
 
-    blocTest<UniversoCubit, EstadoCarga<List<Asignatura>>>(
+    blocTest<MateriasCubit, EstadoCarga<List<Asignatura>>>(
       'emite fallo con indicación de falta de conexión',
       build: () =>
-          UniversoCubit(FalsoCatalogo(error: const ExcepcionApi.sinConexion())),
+          MateriasCubit(FalsoCatalogo(error: const ExcepcionApi.sinConexion())),
       act: (c) => c.cargar(),
       expect: () => [
         const Cargando<List<Asignatura>>(),

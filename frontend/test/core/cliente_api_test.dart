@@ -29,7 +29,11 @@ void main() {
     test(
       'GET envía el token de acceso y no envía la cabecera anti-CSRF',
       () async {
-        sesion.iniciarCuenta(tokenAcceso: 'T1', roles: ['estudiante']);
+        sesion.iniciarCuenta(
+          tokenAcceso: 'T1',
+          roles: ['estudiante'],
+          nombre: 'Ana',
+        );
         late http.Request recibida;
         final api = crear((r) async {
           recibida = r;
@@ -178,7 +182,11 @@ void main() {
     test(
       'ante un 401 renueva una vez, actualiza el token y repite la solicitud',
       () async {
-        sesion.iniciarCuenta(tokenAcceso: 'VIEJO', roles: ['estudiante']);
+        sesion.iniciarCuenta(
+          tokenAcceso: 'VIEJO',
+          roles: ['estudiante'],
+          nombre: 'Ana',
+        );
         final registro = <String>[];
         final api = crear((r) async {
           registro.add(
@@ -207,7 +215,11 @@ void main() {
     test(
       'varias solicitudes simultáneas con 401 provocan una sola renovación',
       () async {
-        sesion.iniciarCuenta(tokenAcceso: 'VIEJO', roles: ['estudiante']);
+        sesion.iniciarCuenta(
+          tokenAcceso: 'VIEJO',
+          roles: ['estudiante'],
+          nombre: 'Ana',
+        );
         var renovaciones = 0;
         final api = crear((r) async {
           if (r.url.path.endsWith('/renovar')) {
@@ -234,7 +246,11 @@ void main() {
     test(
       'si la renovación falla, la sesión se cierra y se informa el 401',
       () async {
-        sesion.iniciarCuenta(tokenAcceso: 'VIEJO', roles: ['estudiante']);
+        sesion.iniciarCuenta(
+          tokenAcceso: 'VIEJO',
+          roles: ['estudiante'],
+          nombre: 'Ana',
+        );
         final api = crear(
           (_) async => json({'codigo': 'sesion_invalida'}, 401),
         );
@@ -250,7 +266,7 @@ void main() {
     );
 
     test('un invitado con 401 (sesión vencida) vuelve a la bienvenida sin intentar renovar', () async {
-      sesion.iniciarInvitado();
+      sesion.iniciarInvitado(nombre: 'Luna');
       var llamadas = 0;
       final api = crear((_) async {
         llamadas++;
