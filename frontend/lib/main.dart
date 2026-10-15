@@ -29,6 +29,7 @@ void main() {
       repositorioPartida: RepositorioPartidaApi(cliente),
       repositorioProgreso: RepositorioProgresoApi(cliente),
       repositorioSalon: RepositorioSalonApi(cliente),
+      googleClientId: Configuracion.googleClientId,
     ),
   );
 }

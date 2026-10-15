@@ -246,7 +246,11 @@ void main() {
             SizedBox(
               width: 400,
               height: 700,
-              child: FondoEspacial(variante: variante, hijo: const SizedBox()),
+              child: FondoEspacial(
+                variante: variante,
+                vectorial: true,
+                hijo: const SizedBox(),
+              ),
             ),
           ),
         );

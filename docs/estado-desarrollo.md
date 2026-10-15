@@ -120,3 +120,13 @@ Recorrido: Bienvenida → (invitado: solo apodo) → Cabina → JUGAR → Materi
 - Verificado: `flutter analyze` sin avisos, 107 pruebas pasando (incluye 4 tamaños de pantalla, texto grande y semántica), `flutter build web --release` correcto.
 - NO verificado: el rediseño contra la API real con contenido (Neon sigue sin categorías; `002_contenido_inicial.sql` sin aplicar); apariencia en navegador real.
 - Limitaciones: sin sonido; ajustes solo en memoria; apodo del invitado no se envía al servidor; panel docente y Google login pendientes; la API no entrega nivel ni reintentos por partida.
+
+## Autenticación: registro sin aula y acceso docente con Google (2026-10-14)
+- **Causa de que se exigiera aula:** solo el código de la API (`ServicioAutenticacion.RegistrarEstudianteAsync` y el formulario). La base de datos no lo exigía: no se tocó Neon ni hubo migraciones.
+- **Cambio:** `codigoAula` opcional; sin código el estudiante se registra, inicia sesión, juega y se une después desde Salón.
+- **Google:** el front usa Google Identity Services (botón oficial) y envía el ID token a `POST /autenticacion/google`; la API lo valida. Variables: `Autenticacion__GoogleClientId` (backend, `.env`), `--dart-define=GOOGLE_CLIENT_ID=...` (front; el Client ID es público), `Autenticacion__DocentePorGoogleAbierto` (rol docente a cualquier cuenta Google; decisión del usuario, **no usar en producción**). El secreto del cliente quedó en `.env` (ignorado por Git) y la app no lo usa: el flujo con ID token no lo necesita.
+- **Origen autorizado en Google Cloud:** `http://localhost:8080` (no hay redirecciones: no se usa flujo OAuth con redirección).
+- **Docente:** al entrar con Google queda en `/docente` (el panel todavía no existe); las rutas infantiles lo devuelven allí.
+- **Fondo:** se integró la ilustración `assets/imagenes/superficie_lunar.jpg` (735×737 px, estilo plano) con `BoxFit.cover` anclada abajo. Al ser de baja resolución puede verse suave en pantallas grandes; conviene una versión de mayor resolución.
+- **Pruebas:** backend 31 unitarias + 30 integración (incluye 8 de cuentas); frontend 115. Ver informe en el chat.
+- **Pendiente (módulo de contenido educativo):** NO integrado; ver propuesta aparte (choca con reglas ya implementadas).

@@ -56,14 +56,25 @@ class AccesoCubit extends Cubit<EstadoAcceso> {
     });
   }
 
+  /// Acceso docente: la API valida la credencial de Google y crea o recupera la cuenta.
+  Future<void> ingresarConGoogle(String idToken) async {
+    await _ejecutar(() async {
+      final resultado = await _repositorio.iniciarSesionGoogle(idToken);
+      _sesion.iniciarCuenta(
+        tokenAcceso: resultado.tokenAcceso,
+        roles: resultado.roles,
+        nombre: resultado.nombreMostrar,
+      );
+    });
+  }
+
   Future<void> registrar({
     required String codigoAula,
     required String nombreMostrar,
     required String nombreUsuario,
     required String contrasena,
   }) async {
-    if (codigoAula.trim().isEmpty ||
-        nombreMostrar.trim().isEmpty ||
+    if (nombreMostrar.trim().isEmpty ||
         nombreUsuario.trim().isEmpty ||
         contrasena.isEmpty) {
       emit(const EstadoAcceso(mensajeError: 'Completa todos los datos.'));
@@ -116,6 +127,13 @@ class AccesoCubit extends Cubit<EstadoAcceso> {
     'aula_no_encontrada' =>
       'No encontramos ese código de aula. Revisa que esté bien escrito.',
     'nombre_usuario_en_uso' => 'Ese usuario ya existe. Prueba con otro.',
+    'google_token_invalido' =>
+      'No pudimos validar tu cuenta de Google. Inténtalo de nuevo.',
+    'google_no_configurado' =>
+      'El acceso con Google no está disponible por ahora.',
+    'google_correo_no_verificado' => 'Tu correo de Google no está verificado.',
+    'correo_ya_registrado' => 'Ese correo ya está asociado a otra cuenta.',
+    'cuenta_no_activa' => 'Esta cuenta no está activa.',
     _ => e.mensaje,
   };
 }

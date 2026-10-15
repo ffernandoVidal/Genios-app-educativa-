@@ -65,6 +65,7 @@ public class FixtureJuego : IAsyncLifetime
                 ["ConnectionStrings:GeniosDatabase"] = cadena,
                 ["Autenticacion:Clave"] = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48)),
                 ["Autenticacion:CookieSegura"] = "false",
+                ["Autenticacion:GoogleClientId"] = "cliente-de-prueba.apps.googleusercontent.com",
                 ["Autenticacion:IntentosPorMinuto"] = "100000",
                 ["Juego:SegundosMecha"] = "2" // en producción son 30; aquí se acorta para no esperar
             }));

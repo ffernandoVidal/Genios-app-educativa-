@@ -24,6 +24,7 @@ class AppGenios extends StatefulWidget {
     required this.repositorioProgreso,
     required this.repositorioSalon,
     this.ajustes,
+    this.googleClientId = '',
   });
 
   final SesionApp sesion;
@@ -36,12 +37,18 @@ class AppGenios extends StatefulWidget {
   /// Preferencias visuales; si no se indican se usan las predeterminadas.
   final AjustesApp? ajustes;
 
+  /// Client ID público de Google para el acceso docente.
+  final String googleClientId;
+
   @override
   State<AppGenios> createState() => _AppGeniosState();
 }
 
 class _AppGeniosState extends State<AppGenios> {
-  late final GoRouter _enrutador = crearEnrutador(widget.sesion);
+  late final GoRouter _enrutador = crearEnrutador(
+    widget.sesion,
+    googleClientId: widget.googleClientId,
+  );
   late final AjustesApp _ajustes = widget.ajustes ?? AjustesApp();
 
   @override

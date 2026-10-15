@@ -22,6 +22,7 @@ class FondoEspacial extends StatelessWidget {
     required this.hijo,
     this.variante = VarianteFondo.suave,
     this.imagen,
+    this.vectorial = false,
   });
 
   final Widget hijo;
@@ -29,6 +30,14 @@ class FondoEspacial extends StatelessWidget {
 
   /// Ilustración opcional del paisaje. Se dibuja con `BoxFit.cover` (sin estirar) debajo del contenido.
   final ImageProvider? imagen;
+
+  /// Ilustración oficial del paisaje lunar (735×737 px, estilo plano). Se ancla abajo para que la Luna siempre se vea.
+  static const ilustracionOficial = AssetImage(
+    'assets/imagenes/superficie_lunar.jpg',
+  );
+
+  /// Dibuja el paisaje vectorial propio en lugar de la ilustración.
+  final bool vectorial;
 
   @override
   Widget build(BuildContext context) {
@@ -43,11 +52,13 @@ class FondoEspacial extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (imagen != null)
+          if (!vectorial || imagen != null)
             Image(
-              image: imagen!,
+              image: imagen ?? ilustracionOficial,
               fit: BoxFit.cover,
-              filterQuality: FilterQuality.medium,
+              alignment: Alignment.bottomCenter,
+              filterQuality: FilterQuality.high,
+              excludeFromSemantics: true,
             )
           else
             ExcludeSemantics(

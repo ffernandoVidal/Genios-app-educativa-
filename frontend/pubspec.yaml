@@ -38,6 +38,7 @@ dependencies:
   go_router: ^18.1.0
   equatable: ^3.0.0
   http: ^1.6.0
+  web: ^1.1.0
 
 dev_dependencies:
   flutter_test:
@@ -58,6 +59,9 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/imagenes/
 
   # Fuentes con licencia SIL OFL 1.1 (ver assets/fuentes/*-OFL.txt):
   # Baloo 2 (redondeada, títulos) y Nunito (alta legibilidad, preguntas y formularios).

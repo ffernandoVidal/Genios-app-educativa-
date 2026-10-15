@@ -39,6 +39,7 @@ Future<AppAbierta> abrirApp(
   SesionApp? sesion,
   AjustesApp? ajustes,
   Size? tamano,
+  String googleClientId = 'cliente-de-prueba.apps.googleusercontent.com',
 }) async {
   t.view.devicePixelRatio = 1.0;
   t.view.physicalSize = tamano ?? const Size(1000, 1800);
@@ -62,6 +63,7 @@ Future<AppAbierta> abrirApp(
       repositorioProgreso: app.progreso,
       repositorioSalon: app.salon,
       ajustes: app.ajustes,
+      googleClientId: googleClientId,
     ),
   );
   await t.pumpAndSettle();

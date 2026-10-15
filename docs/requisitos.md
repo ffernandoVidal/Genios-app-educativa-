@@ -15,7 +15,7 @@ Estado verificado el 2026-10-14. Leyenda: **OK** implementado y con evidencia; *
 |---|---|---|
 | RF-01.1 invitado | OK (API) · Front | `ModoInvitadoTests` |
 | RF-01.2 registro estudiante | OK (API) · Front | verificación manual 48/48 + pruebas de partidas |
-| RF-01.3 docente con Google | **Parcial** | implementado, **sin probar con token real** (falta Client ID). El rol docente exige dominio autorizado (lista vacía) |
+| RF-01.3 docente con Google | **Parcial** | Client ID configurado en `.env`; botón de Google Identity Services en el front; backend probado con verificador simulado. **Sin probar aún con un token real en el navegador.** Rol docente: dominio autorizado o `DocentePorGoogleAbierto` (decisión del usuario, solo desarrollo) |
 | RF-01.4 cerrar sesión | OK (API) · Front | verificación manual |
 | RF-01.5 funciones por rol | OK (API) · Front | `EstadisticasTests` (403/401) |
 | RF-01.6 ofrecer registro | OK (API) | `GET /sesiones-juego/yo` · prueba de la regla |

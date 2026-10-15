@@ -31,7 +31,7 @@ class RepositorioAccesoApi implements RepositorioAcceso {
   }) async {
     return _resultado(
       await _api.enviar('/estudiantes/registro', {
-        'codigoAula': codigoAula,
+        if (codigoAula.isNotEmpty) 'codigoAula': codigoAula,
         'nombreMostrar': nombreMostrar,
         'nombreUsuario': nombreUsuario,
         'contrasena': contrasena,
@@ -46,6 +46,16 @@ class RepositorioAccesoApi implements RepositorioAcceso {
       tokenAcceso: datos['tokenAcceso'] as String,
       roles: (usuario['roles'] as List<dynamic>).cast<String>(),
       nombreMostrar: usuario['nombreMostrar'] as String,
+    );
+  }
+
+  @override
+  Future<ResultadoAcceso> iniciarSesionGoogle(String idToken) async {
+    return _resultado(
+      await _api.enviar('/autenticacion/google', {
+        'idToken': idToken,
+        'solicitaRolDocente': true,
+      }),
     );
   }
 

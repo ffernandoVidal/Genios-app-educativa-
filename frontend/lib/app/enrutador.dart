@@ -18,7 +18,7 @@ import '../features/salon/presentacion/salon_pantalla.dart';
 /// Recorrido aprobado: Bienvenida → Cabina → JUGAR → Materias → Misiones → Partida → Resultados.
 /// Las pantallas privadas exigen una sesión; si vence, se vuelve a la bienvenida.
 /// Esto solo ordena la navegación: la autorización real la hace siempre la API.
-GoRouter crearEnrutador(SesionApp sesion) {
+GoRouter crearEnrutador(SesionApp sesion, {String googleClientId = ''}) {
   const soloSinSesion = {'/', '/jugar', '/ingresar'};
   const publicas = {'/', '/jugar', '/ingresar', '/registro', '/docente'};
 
@@ -27,6 +27,10 @@ GoRouter crearEnrutador(SesionApp sesion) {
     redirect: (context, estado) {
       final ruta = estado.uri.path;
       if (!sesion.activa && !publicas.contains(ruta)) return '/';
+      // El docente solo tiene su propia pantalla: la experiencia infantil es para estudiantes e invitados.
+      if (sesion.modo == ModoSesion.docente && ruta != '/docente') {
+        return '/docente';
+      }
       if (sesion.activa && soloSinSesion.contains(ruta)) return '/cabina';
       // El registro también se permite a un invitado (es la invitación a crear su cuenta).
       if (ruta == '/registro' &&
@@ -41,7 +45,10 @@ GoRouter crearEnrutador(SesionApp sesion) {
       GoRoute(path: '/jugar', builder: (_, _) => const JugarPantalla()),
       GoRoute(path: '/ingresar', builder: (_, _) => const IngresarPantalla()),
       GoRoute(path: '/registro', builder: (_, _) => const RegistroPantalla()),
-      GoRoute(path: '/docente', builder: (_, _) => const DocentePantalla()),
+      GoRoute(
+        path: '/docente',
+        builder: (_, _) => DocentePantalla(googleClientId: googleClientId),
+      ),
       GoRoute(path: '/cabina', builder: (_, _) => const CabinaPantalla()),
       GoRoute(path: '/materias', builder: (_, _) => const MateriasPantalla()),
       GoRoute(path: '/perfil', builder: (_, _) => const PerfilPantalla()),

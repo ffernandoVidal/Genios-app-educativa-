@@ -436,7 +436,7 @@ void main() {
       await t.pumpAndSettle();
 
       expect(
-        find.text('Pídele a tu docente el código de tu aula.'),
+        find.text('Crea tu cuenta y juega. El código de aula es opcional.'),
         findsOneWidget,
       );
     });

@@ -28,5 +28,8 @@ abstract class RepositorioAcceso {
     required String contrasena,
   });
 
+  /// Intercambia la credencial de Google (ID token) por una sesión docente. La API valida el token.
+  Future<ResultadoAcceso> iniciarSesionGoogle(String idToken);
+
   Future<void> cerrarSesion();
 }

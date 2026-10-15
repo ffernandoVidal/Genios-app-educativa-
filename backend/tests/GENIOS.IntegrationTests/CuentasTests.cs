@@ -1,0 +1,154 @@
+using System.Net;
+using System.Net.Http.Json;
+using GENIOS.Application.Aulas;
+using GENIOS.Application.Autenticacion;
+using GENIOS.Infrastructure.Autenticacion;
+using GENIOS.IntegrationTests.Soporte;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
+namespace GENIOS.IntegrationTests;
+
+[Collection(ColeccionJuego.Nombre)]
+public class CuentasTests(FixtureJuego f)
+{
+    [Fact]
+    public async Task Un_estudiante_se_registra_sin_aula_inicia_sesion_y_se_une_despues()
+    {
+        var cliente = f.Fabrica.CreateClient();
+        var usuario = f.NombreUsuarioNuevo();
+
+        var registro = await cliente.PostAsJsonAsync("/api/v1/estudiantes/registro",
+            new SolicitudRegistroEstudiante(null, usuario, "clave123", "Estudiante sin aula"));
+        Assert.Equal(HttpStatusCode.OK, registro.StatusCode);
+        var datos = (await registro.Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
+        cliente.DefaultRequestHeaders.Authorization = new("Bearer", datos.TokenAcceso);
+        Assert.Empty((await cliente.GetFromJsonAsync<List<AulaDto>>("/api/v1/aulas/mi-aula"))!);
+
+        var otro = f.Fabrica.CreateClient();
+        var login = await otro.PostAsJsonAsync("/api/v1/autenticacion/estudiante/iniciar-sesion",
+            new SolicitudInicioSesionEstudiante(usuario, "clave123"));
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+
+        var unirse = await cliente.PostAsJsonAsync("/api/v1/aulas/unirse", new SolicitudCodigoAula(f.CodigoAula));
+        Assert.Equal(HttpStatusCode.OK, unirse.StatusCode);
+        Assert.Single((await cliente.GetFromJsonAsync<List<AulaDto>>("/api/v1/aulas/mi-aula"))!);
+    }
+
+    [Fact]
+    public async Task Un_codigo_de_aula_inexistente_sigue_rechazandose_y_un_codigo_vacio_no()
+    {
+        var cliente = f.Fabrica.CreateClient();
+        var malo = await cliente.PostAsJsonAsync("/api/v1/estudiantes/registro",
+            new SolicitudRegistroEstudiante("ZZZZZ", f.NombreUsuarioNuevo(), "clave123", "Ana"));
+        Assert.Equal(HttpStatusCode.NotFound, malo.StatusCode);
+
+        var vacio = await cliente.PostAsJsonAsync("/api/v1/estudiantes/registro",
+            new SolicitudRegistroEstudiante("  ", f.NombreUsuarioNuevo(), "clave123", "Ana"));
+        Assert.Equal(HttpStatusCode.OK, vacio.StatusCode);
+    }
+
+    [Fact]
+    public async Task No_se_duplica_el_nombre_de_usuario()
+    {
+        var cliente = f.Fabrica.CreateClient();
+        var usuario = f.NombreUsuarioNuevo();
+        var solicitud = new SolicitudRegistroEstudiante(null, usuario, "clave123", "Ana");
+        Assert.Equal(HttpStatusCode.OK, (await cliente.PostAsJsonAsync("/api/v1/estudiantes/registro", solicitud)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await cliente.PostAsJsonAsync("/api/v1/estudiantes/registro", solicitud)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Una_credencial_de_google_invalida_se_rechaza_sin_crear_cuentas()
+    {
+        var cliente = f.Fabrica.CreateClient();
+        var respuesta = await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("no-es-un-token", true));
+        Assert.Equal(HttpStatusCode.Unauthorized, respuesta.StatusCode);
+    }
+
+    [Fact]
+    public async Task Un_estudiante_no_puede_usar_funciones_de_docente_ni_ver_aulas_ajenas()
+    {
+        var estudiante = await JuegoApi.NuevoEstudianteAsync(f);
+        var crear = await estudiante.Http.PostAsJsonAsync("/api/v1/aulas", new SolicitudCrearAula("Aula intrusa", null));
+        Assert.Equal(HttpStatusCode.Forbidden, crear.StatusCode);
+        var estadisticas = await estudiante.Http.GetAsync($"/api/v1/aulas/{f.AulaId}/estadisticas");
+        Assert.Equal(HttpStatusCode.Forbidden, estadisticas.StatusCode);
+    }
+
+    // --------------------------------------------------------------------- Google con un verificador simulado
+    // La validación real de la firma de Google necesita un token vivo; aquí se simula solo ese paso y se prueba todo lo demás.
+
+    private class VerificadorGoogleFalso(DatosGoogle datos) : VerificadorGoogle(Microsoft.Extensions.Options.Options.Create(new OpcionesAutenticacion()))
+    {
+        public override Task<DatosGoogle> ValidarAsync(string idToken) => Task.FromResult(datos);
+    }
+
+    private HttpClient ClienteConGoogle(DatosGoogle datos, bool docenteAbierto)
+    {
+        var fabrica = f.Fabrica.WithWebHostBuilder(b =>
+        {
+            b.ConfigureAppConfiguration((_, cfg) => cfg.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Autenticacion:DocentePorGoogleAbierto"] = docenteAbierto ? "true" : "false"
+            }));
+            b.ConfigureTestServices(servicios =>
+            {
+                servicios.RemoveAll<VerificadorGoogle>();
+                servicios.AddSingleton<VerificadorGoogle>(new VerificadorGoogleFalso(datos));
+            });
+        });
+        return fabrica.CreateClient();
+    }
+
+    private DatosGoogle NuevaIdentidad(string etiqueta) =>
+        new($"sub-{f.Etiqueta}-{etiqueta}", $"t{f.Etiqueta}{etiqueta}@prueba.invalid", "Docente de prueba");
+
+    [Fact]
+    public async Task El_primer_acceso_con_google_crea_un_docente_sin_aula_y_el_segundo_reutiliza_la_cuenta()
+    {
+        var identidad = NuevaIdentidad("g1");
+        var cliente = ClienteConGoogle(identidad, docenteAbierto: true);
+
+        var primero = await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("x", true));
+        Assert.Equal(HttpStatusCode.OK, primero.StatusCode);
+        var a = (await primero.Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
+        Assert.Contains("docente", a.Usuario.Roles);
+
+        cliente.DefaultRequestHeaders.Authorization = new("Bearer", a.TokenAcceso);
+        Assert.Empty((await cliente.GetFromJsonAsync<List<AulaDto>>("/api/v1/aulas/mi-aula"))!);
+
+        var segundo = await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("x", true));
+        var b = (await segundo.Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
+        Assert.Equal(a.Usuario.Id, b.Usuario.Id);
+        Assert.Equal(1, await f.Escalar<long>("select count(*) from identidades_externas where identificador_externo = @s", ("s", identidad.Sub)));
+    }
+
+    [Fact]
+    public async Task Sin_alta_abierta_una_cuenta_de_google_fuera_de_la_lista_no_recibe_rol_docente()
+    {
+        var cliente = ClienteConGoogle(NuevaIdentidad("g2"), docenteAbierto: false);
+        var respuesta = await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("x", true));
+        var datos = (await respuesta.Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
+        Assert.DoesNotContain("docente", datos.Usuario.Roles);
+    }
+
+    [Fact]
+    public async Task Un_docente_de_google_solo_ve_sus_propias_aulas_y_no_las_ajenas()
+    {
+        var cliente = ClienteConGoogle(NuevaIdentidad("g3"), docenteAbierto: true);
+        var sesion = (await (await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("x", true)))
+            .Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
+        cliente.DefaultRequestHeaders.Authorization = new("Bearer", sesion.TokenAcceso);
+
+        var ajena = await cliente.GetAsync($"/api/v1/aulas/{f.AulaId}/estadisticas");
+        Assert.True(ajena.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.NotFound);
+
+        var propia = await cliente.PostAsJsonAsync("/api/v1/aulas", new SolicitudCrearAula("Aula del docente Google", null));
+        Assert.Equal(HttpStatusCode.OK, propia.StatusCode);
+    }
+}

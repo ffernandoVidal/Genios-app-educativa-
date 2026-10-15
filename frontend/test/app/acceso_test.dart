@@ -180,7 +180,7 @@ void main() {
         await t.tap(find.text('Crear una cuenta'));
         await t.pumpAndSettle();
         expect(
-          find.text('Pídele a tu docente el código de tu aula.'),
+          find.text('Crea tu cuenta y juega. El código de aula es opcional.'),
           findsOneWidget,
         );
 
@@ -188,7 +188,7 @@ void main() {
             .go('/docente');
         await t.pumpAndSettle();
         expect(find.text('Acceso docente'), findsOneWidget);
-        expect(find.textContaining('llegará pronto'), findsOneWidget);
+        expect(find.text('CONTINUAR CON GOOGLE'), findsOneWidget);
       },
     );
   });
@@ -249,6 +249,25 @@ void main() {
       await t.pumpAndSettle();
 
       expect(app.acceso.ultimoCodigoAula, 'k4821');
+      expect(app.sesion.modo, ModoSesion.estudiante);
+      expect(find.text('JUGAR'), findsOneWidget);
+    });
+
+    testWidgets('se puede crear la cuenta sin código de aula', (t) async {
+      final app = await abrirApp(t);
+      await t.tap(find.text('INICIAR SESIÓN'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Crear una cuenta'));
+      await t.pumpAndSettle();
+
+      final campos = find.byType(TextField);
+      await t.enterText(campos.at(1), 'Ana');
+      await t.enterText(campos.at(2), 'ana.luz');
+      await t.enterText(campos.at(3), 'clave123');
+      await t.tap(find.text('CREAR MI CUENTA').last);
+      await t.pumpAndSettle();
+
+      expect(app.acceso.ultimoCodigoAula, '');
       expect(app.sesion.modo, ModoSesion.estudiante);
       expect(find.text('JUGAR'), findsOneWidget);
     });

@@ -9,7 +9,7 @@ public record DatosGoogle(string Sub, string Correo, string Nombre);
 public class VerificadorGoogle(IOptions<OpcionesAutenticacion> opciones)
 {
     /// <summary>Valida firma, vencimiento y audiencia del idToken con las claves públicas de Google.</summary>
-    public async Task<DatosGoogle> ValidarAsync(string idToken)
+    public virtual async Task<DatosGoogle> ValidarAsync(string idToken)
     {
         var clientId = opciones.Value.GoogleClientId;
         if (string.IsNullOrWhiteSpace(clientId))

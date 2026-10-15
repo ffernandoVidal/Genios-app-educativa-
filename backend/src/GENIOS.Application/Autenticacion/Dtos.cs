@@ -1,6 +1,6 @@
 namespace GENIOS.Application.Autenticacion;
 
-public record SolicitudRegistroEstudiante(string CodigoAula, string NombreUsuario, string Contrasena, string NombreMostrar);
+public record SolicitudRegistroEstudiante(string? CodigoAula, string NombreUsuario, string Contrasena, string NombreMostrar);
 
 public record SolicitudInicioSesionEstudiante(string NombreUsuario, string Contrasena);
 

@@ -91,6 +91,21 @@ class FalsoAcceso implements RepositorioAcceso {
     );
   }
 
+  ExcepcionApi? errorGoogle;
+  String? ultimoIdToken;
+  List<String> rolesGoogle = const ['docente'];
+
+  @override
+  Future<ResultadoAcceso> iniciarSesionGoogle(String idToken) async {
+    ultimoIdToken = idToken;
+    if (errorGoogle != null) throw errorGoogle!;
+    return ResultadoAcceso(
+      tokenAcceso: 'TOKEN',
+      roles: rolesGoogle,
+      nombreMostrar: 'Profe Rosa',
+    );
+  }
+
   @override
   Future<void> cerrarSesion() async => cierres++;
 }

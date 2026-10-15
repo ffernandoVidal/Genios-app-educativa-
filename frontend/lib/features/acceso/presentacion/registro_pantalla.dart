@@ -59,7 +59,7 @@ class _RegistroPantallaState extends State<RegistroPantalla> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Pídele a tu docente el código de tu aula.',
+              'Crea tu cuenta y juega. El código de aula es opcional.',
               textAlign: TextAlign.center,
               style: Tipografia.texto(20, peso: 800),
             ),
@@ -72,7 +72,7 @@ class _RegistroPantallaState extends State<RegistroPantalla> {
             const SizedBox(height: Espaciado.xl),
             CampoGenios(
               controlador: _codigo,
-              etiqueta: 'Código del aula (por ejemplo K4821)',
+              etiqueta: 'Código del aula, si tienes uno (opcional)',
               icono: Icons.meeting_room_rounded,
               habilitado: !estado.ocupado,
               mayusculas: true,

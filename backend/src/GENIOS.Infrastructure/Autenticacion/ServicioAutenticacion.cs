@@ -34,7 +34,10 @@ public class ServicioAutenticacion(
         if (nombreMostrar.Length is 0 or > 120)
             throw Error(TipoError.Validacion, "nombre_mostrar_invalido", "El nombre debe tener entre 1 y 120 caracteres.");
 
-        var aula = await bd.BuscarAulaActivaAsync(solicitud.CodigoAula, ct);
+        // El aula es opcional: sin código el estudiante se registra igual y puede unirse después desde Salón.
+        var aula = string.IsNullOrWhiteSpace(solicitud.CodigoAula)
+            ? null
+            : await bd.BuscarAulaActivaAsync(solicitud.CodigoAula, ct);
         var rolId = await ObtenerRolIdAsync(CodigosRol.Estudiante, ct);
 
         var usuario = new Usuarios
@@ -52,7 +55,8 @@ public class ServicioAutenticacion(
         bd.Usuarios.Add(usuario);
         bd.PerfilesEstudiante.Add(new PerfilesEstudiante { UsuarioId = usuario.Id, Activo = true });
         bd.UsuariosRoles.Add(new UsuariosRoles { UsuarioId = usuario.Id, RolId = rolId });
-        bd.MiembrosAula.Add(new MiembrosAula { AulaId = aula.Id, EstudianteId = usuario.Id, Estado = "activo" });
+        if (aula is not null)
+            bd.MiembrosAula.Add(new MiembrosAula { AulaId = aula.Id, EstudianteId = usuario.Id, Estado = "activo" });
 
         try
         {
@@ -63,7 +67,7 @@ public class ServicioAutenticacion(
             throw Error(TipoError.Conflicto, "nombre_usuario_en_uso", "Ese nombre de usuario ya está en uso.");
         }
 
-        await auditoria.RegistrarAsync("estudiante_registrado", usuario.Id, contexto, new { aulaId = aula.Id });
+        await auditoria.RegistrarAsync("estudiante_registrado", usuario.Id, contexto, new { aulaId = aula?.Id });
         return (await CrearSesionAsync(usuario, null, ct)).Resultado;
     }
 
@@ -238,7 +242,8 @@ public class ServicioAutenticacion(
 
         var correo = usuario.Correo ?? "";
         var dominio = correo[(correo.IndexOf('@') + 1)..].ToLowerInvariant();
-        var dominioPermitido = _opciones.DominiosDocentes.Any(d => d.Trim().ToLowerInvariant() == dominio);
+        var dominioPermitido = _opciones.DocentePorGoogleAbierto
+            || _opciones.DominiosDocentes.Any(d => d.Trim().ToLowerInvariant() == dominio);
         if (dominioPermitido)
         {
             perfil.VerificadoEn = DateTime.UtcNow;
@@ -247,7 +252,7 @@ public class ServicioAutenticacion(
         await bd.SaveChangesAsync(ct);
 
         if (dominioPermitido)
-            await auditoria.RegistrarAsync("docente_verificado_por_dominio", usuario.Id, contexto);
+            await auditoria.RegistrarAsync(_opciones.DocentePorGoogleAbierto ? "docente_alta_abierta" : "docente_verificado_por_dominio", usuario.Id, contexto);
     }
 
     // ---------------------------------------------------------------- Sesiones

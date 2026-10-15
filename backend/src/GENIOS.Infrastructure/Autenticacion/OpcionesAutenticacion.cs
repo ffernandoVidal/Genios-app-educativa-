@@ -18,4 +18,7 @@ public class OpcionesAutenticacion
 
     /// <summary>Dominios de correo cuyos docentes se verifican solos. Vacío = ninguno.</summary>
     public string[] DominiosDocentes { get; set; } = [];
+
+    /// <summary>Si es true, cualquier cuenta Google que lo solicite recibe el rol docente. Solo para desarrollo/demostración.</summary>
+    public bool DocentePorGoogleAbierto { get; set; }
 }
