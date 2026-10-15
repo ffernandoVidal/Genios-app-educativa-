@@ -142,3 +142,9 @@ Recorrido: Bienvenida → (invitado: solo apodo) → Cabina → JUGAR → Materi
 - Ranking (`GET /aulas/ranking`) con filtros por aula y por materia, calculado en el servidor.
 - Pruebas: backend +4 (ranking: orden, filtros, empates/duplicados, permisos); front 135 en total. La prueba del bono de categoría se volvió independiente de otros estudiantes (compartían categoría).
 - Pendiente: nada de esto se ha visto con datos reales (Neon sin contenido; con datos solo en pruebas); filtro por materia en la lista de estudiantes (hoy el desglose está al abrir cada uno).
+
+## Banco de 370 preguntas: importador y ensayo (2026-10-15)
+- `tools/banco/importar_banco.py` valida el banco (estructura, 4 opciones, 1 correcta, aritmética automática) y genera `database/migraciones/003_banco_370.sql` (solo datos, idempotente, **NO aplicado**). Nunca escribe en la base.
+- Resultado: 370 preguntas, 37 categorías, 0 rechazadas, 40 avisos de revisión (37 categorías con exactamente 10 preguntas; 3 enunciados repetidos). Informe: `data/educational/informe_importacion.json`.
+- Ensayo en Neon dentro de una transacción con ROLLBACK: 4 niveles, 37 categorías, 370 preguntas, 1480 opciones, 370 claves, todas con 4 opciones y clave; Neon quedó en 0 filas.
+- Mapeo propuesto: asignatura → «Nivel 1» → categoría (una por `category_code`, en el orden de `subjects[].categories`). Puntos del banco ignorados (el servidor calcula 10/15/20). Sin pistas. Todo pendiente de revisión curricular (CNB).
