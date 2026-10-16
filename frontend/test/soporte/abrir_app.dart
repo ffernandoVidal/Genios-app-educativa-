@@ -92,6 +92,8 @@ Future<void> entrarComoInvitado(WidgetTester t, {String apodo = 'Luna'}) async {
 Future<void> entrarComoEstudiante(WidgetTester t) async {
   await t.tap(find.text('INICIAR SESIÓN'));
   await t.pumpAndSettle();
+  await t.tap(find.text('ESTUDIANTE'));
+  await t.pumpAndSettle();
   await t.enterText(find.byType(TextField).first, 'ana.luz');
   await t.enterText(find.byType(TextField).last, 'clave123');
   await t.tap(find.text('ENTRAR'));

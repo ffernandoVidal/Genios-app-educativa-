@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../diseno/componentes/astronauta_genios.dart';
 import '../../../diseno/componentes/botones_juego.dart';
@@ -11,8 +10,7 @@ import '../../../diseno/tokens/tipografia.dart';
 import 'acceso_cubit.dart';
 import 'mensaje_error_acceso.dart';
 
-/// Iniciar sesión de estudiante con usuario y contraseña. El botón «INICIAR SESIÓN GENIO»
-/// lleva al acceso docente con Google, que es un flujo separado.
+/// Iniciar sesión de estudiante con el usuario y la contraseña que le dio su docente.
 class IngresarPantalla extends StatefulWidget {
   const IngresarPantalla({super.key});
 
@@ -91,16 +89,6 @@ class _IngresarPantallaState extends State<IngresarPantalla> {
                 ),
               ),
               MensajeErrorAcceso(mensaje: estado.mensajeError),
-              const SizedBox(height: Espaciado.l),
-              Center(
-                child: BotonPrincipalJuego(
-                  texto: 'INICIAR SESIÓN GENIO',
-                  icono: Icons.school_rounded,
-                  alPulsar: estado.ocupado
-                      ? null
-                      : () => context.push('/docente'),
-                ),
-              ),
             ],
           ),
         ),

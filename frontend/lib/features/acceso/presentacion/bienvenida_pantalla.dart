@@ -85,7 +85,7 @@ class BienvenidaPantalla extends StatelessWidget {
                         BotonSecundarioJuego(
                           texto: 'INICIAR SESIÓN',
                           icono: Icons.login_rounded,
-                          alPulsar: () => context.push('/ingresar'),
+                          alPulsar: () => context.push('/acceso'),
                         ),
                       ],
                     ),

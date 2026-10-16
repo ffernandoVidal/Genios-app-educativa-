@@ -2,7 +2,9 @@ import 'package:go_router/go_router.dart';
 
 import '../core/sesion/sesion_app.dart';
 import '../features/acceso/dominio/restaurador_sesion.dart';
+import '../features/acceso/presentacion/acceso_pantalla.dart';
 import '../features/acceso/presentacion/activar_pantalla.dart';
+import '../features/acceso/presentacion/genio_pantalla.dart';
 import '../features/acceso/presentacion/elegir_rol_pantalla.dart';
 import '../features/acceso/presentacion/restaurando_pantalla.dart';
 import '../features/acceso/presentacion/bienvenida_pantalla.dart';
@@ -35,10 +37,12 @@ GoRouter crearEnrutador(
   String googleClientId = '',
   required RestauradorSesion restaurador,
 }) {
-  const soloSinSesion = {'/', '/jugar', '/ingresar'};
+  const soloSinSesion = {'/', '/jugar', '/acceso', '/genio', '/ingresar'};
   const publicas = {
     '/',
     '/jugar',
+    '/acceso',
+    '/genio',
     '/ingresar',
     '/registro',
     '/docente',
@@ -108,6 +112,11 @@ GoRouter crearEnrutador(
         builder: (_, _) => const ElegirRolPantalla(),
       ),
       GoRoute(path: '/jugar', builder: (_, _) => const JugarPantalla()),
+      GoRoute(path: '/acceso', builder: (_, _) => const AccesoPantalla()),
+      GoRoute(
+        path: '/genio',
+        builder: (_, _) => GenioPantalla(googleClientId: googleClientId),
+      ),
       GoRoute(path: '/ingresar', builder: (_, _) => const IngresarPantalla()),
       GoRoute(path: '/activar', builder: (_, _) => const ActivarPantalla()),
       GoRoute(path: '/registro', builder: (_, _) => const RegistroPantalla()),

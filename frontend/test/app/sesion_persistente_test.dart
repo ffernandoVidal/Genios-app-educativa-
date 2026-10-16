@@ -123,16 +123,48 @@ void main() {
 
   group('confirmación del rol docente', () {
     Future<AppAbierta> abrirPendiente(WidgetTester t) async {
+      // Sesión recuperada de una cuenta de Google sin rol (por ejemplo, cerró la pestaña antes de elegir).
+      final acceso = FalsoAcceso()
+        ..cuentaRecuperable = const ResultadoAcceso(
+          tokenAcceso: 'T-NUEVA',
+          roles: [],
+          nombreMostrar: 'Nueva',
+        );
+      return abrirApp(t, acceso: acceso, restaurarAlIniciar: true);
+    }
+
+    Future<AppAbierta> entrarConGoogle(WidgetTester t, String tarjeta) async {
       final acceso = FalsoAcceso()..rolesGoogle = const [];
       final app = await abrirApp(t, acceso: acceso);
       await t.tap(find.text('INICIAR SESIÓN'));
       await t.pumpAndSettle();
-      await t.tap(find.text('INICIAR SESIÓN GENIO'));
+      await t.tap(find.text(tarjeta));
       await t.pumpAndSettle();
       await t.tap(find.text('CONTINUAR CON GOOGLE'));
       await t.pumpAndSettle();
       return app;
     }
+
+    testWidgets(
+      'la tarjeta GENIO deja a una cuenta nueva como estudiante, sin preguntar',
+      (t) async {
+        final app = await entrarConGoogle(t, 'GENIO');
+        expect(app.acceso.rolesElegidos, ['estudiante']);
+        expect(app.sesion.modo, ModoSesion.estudiante);
+        expect(find.text('¿Cómo vas a usar GENIOS?'), findsNothing);
+        expect(find.text('JUGAR'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'la tarjeta DOCENTE deja a una cuenta nueva como docente, sin preguntar',
+      (t) async {
+        final app = await entrarConGoogle(t, 'DOCENTE');
+        expect(app.acceso.rolesElegidos, ['docente']);
+        expect(app.sesion.modo, ModoSesion.docente);
+        expect(find.text('¿Cómo vas a usar GENIOS?'), findsNothing);
+      },
+    );
 
     testWidgets(
       'una identidad nueva ve la confirmación y no entra al panel sin confirmar',
@@ -190,23 +222,22 @@ void main() {
     testWidgets('si el servidor lo rechaza, se explica y no se cambia de rol', (
       t,
     ) async {
-      final acceso = FalsoAcceso()..rolesGoogle = const [];
-      acceso.errorConfirmar = const ExcepcionApi(
-        'No',
-        estado: 403,
-        codigo: 'rol_no_permitido',
-      );
+      final acceso = FalsoAcceso()
+        ..rolesGoogle = const []
+        ..errorConfirmar = const ExcepcionApi(
+          'No',
+          estado: 403,
+          codigo: 'rol_no_permitido',
+        );
       final app = await abrirApp(t, acceso: acceso);
       await t.tap(find.text('INICIAR SESIÓN'));
       await t.pumpAndSettle();
-      await t.tap(find.text('INICIAR SESIÓN GENIO'));
+      await t.tap(find.text('DOCENTE'));
       await t.pumpAndSettle();
       await t.tap(find.text('CONTINUAR CON GOOGLE'));
       await t.pumpAndSettle();
-      await t.tap(find.text('SOY DOCENTE'));
-      await t.pumpAndSettle();
 
-      expect(app.sesion.modo, ModoSesion.rolPendiente);
+      expect(app.sesion.activa, isFalse);
       expect(
         find.text('Esta cuenta ya tiene un rol y no puede cambiarlo.'),
         findsOneWidget,

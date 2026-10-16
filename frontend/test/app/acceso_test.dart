@@ -141,6 +141,8 @@ void main() {
         final app = await abrirApp(t);
         await t.tap(find.text('INICIAR SESIÓN'));
         await t.pumpAndSettle();
+        await t.tap(find.text('ESTUDIANTE'));
+        await t.pumpAndSettle();
 
         await t.tap(find.text('ENTRAR'));
         await t.pumpAndSettle();
@@ -171,25 +173,42 @@ void main() {
     );
 
     testWidgets(
-      'la pantalla de inicio de sesión no ofrece crear cuenta ni código de docente, y tiene el botón docente',
+      'iniciar sesión ofrece tres tarjetas y el formulario de estudiante no ofrece crear cuenta ni código',
       (t) async {
         await abrirApp(t);
         await t.tap(find.text('INICIAR SESIÓN'));
         await t.pumpAndSettle();
 
+        expect(find.text('GENIO'), findsOneWidget);
+        expect(find.text('ESTUDIANTE'), findsOneWidget);
+        expect(find.text('DOCENTE'), findsOneWidget);
+
+        await t.tap(find.text('ESTUDIANTE'));
+        await t.pumpAndSettle();
         expect(find.text('¡Qué bueno verte de nuevo!'), findsOneWidget);
         expect(find.text('Crear una cuenta'), findsNothing);
         expect(find.text('Tengo un código de mi docente'), findsNothing);
-        expect(find.text('Soy docente'), findsNothing);
         expect(find.text('ENTRAR'), findsOneWidget);
         expect(find.byType(TextField), findsNWidgets(2));
-
-        await t.tap(find.text('INICIAR SESIÓN GENIO'));
-        await t.pumpAndSettle();
-        expect(find.text('Acceso docente'), findsOneWidget);
-        expect(find.text('CONTINUAR CON GOOGLE'), findsOneWidget);
       },
     );
+
+    testWidgets('las tarjetas GENIO y DOCENTE llevan a Google', (t) async {
+      await abrirApp(t);
+      await t.tap(find.text('INICIAR SESIÓN'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('GENIO'));
+      await t.pumpAndSettle();
+      expect(find.text('Acceso Genio'), findsOneWidget);
+      expect(find.text('CONTINUAR CON GOOGLE'), findsOneWidget);
+
+      GoRouter.of(t.element(find.byType(Scaffold).first)).go('/acceso');
+      await t.pumpAndSettle();
+      await t.tap(find.text('DOCENTE'));
+      await t.pumpAndSettle();
+      expect(find.text('Acceso docente'), findsOneWidget);
+      expect(find.text('CONTINUAR CON GOOGLE'), findsOneWidget);
+    });
 
     for (final tamano in const [
       Size(360, 640),
@@ -197,14 +216,14 @@ void main() {
       Size(1440, 900),
     ]) {
       testWidgets(
-        'el botón «INICIAR SESIÓN GENIO» cabe sin desbordes en ${tamano.width.toInt()}x${tamano.height.toInt()}',
+        'las tres tarjetas caben sin desbordes en ${tamano.width.toInt()}x${tamano.height.toInt()}',
         (t) async {
           await abrirApp(t, tamano: tamano);
           await t.tap(find.text('INICIAR SESIÓN'));
           await t.pumpAndSettle();
 
-          await t.ensureVisible(find.text('INICIAR SESIÓN GENIO'));
-          expect(find.text('INICIAR SESIÓN GENIO'), findsOneWidget);
+          await t.ensureVisible(find.text('DOCENTE'));
+          expect(find.text('DOCENTE'), findsOneWidget);
           expect(t.takeException(), isNull);
         },
       );

@@ -80,10 +80,16 @@ class AccesoCubit extends Cubit<EstadoAcceso> {
     return listo;
   }
 
-  /// Acceso docente: la API valida la credencial de Google y crea o recupera la cuenta.
-  Future<void> ingresarConGoogle(String idToken) async {
+  /// Acceso con Google: la API valida la credencial y crea o recupera la cuenta.
+  /// Si la cuenta es nueva (sin rol) y la tarjeta elegida indica [rolDeseado], se confirma ese rol
+  /// en el mismo paso; el servidor sigue decidiendo si corresponde.
+  Future<void> ingresarConGoogle(String idToken, {String? rolDeseado}) async {
     await _ejecutar(() async {
-      final resultado = await _repositorio.iniciarSesionGoogle(idToken);
+      var resultado = await _repositorio.iniciarSesionGoogle(idToken);
+      if (resultado.roles.isEmpty && rolDeseado != null) {
+        _sesion.actualizarToken(resultado.tokenAcceso);
+        resultado = await _repositorio.elegirRol(rolDeseado);
+      }
       _sesion.iniciarCuenta(
         tokenAcceso: resultado.tokenAcceso,
         roles: resultado.roles,

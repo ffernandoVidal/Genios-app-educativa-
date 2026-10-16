@@ -55,8 +55,9 @@ class DocentePantalla extends StatelessWidget {
             else
               BotonGoogle(
                 clientId: googleClientId,
-                alCredencial: (idToken) =>
-                    context.read<AccesoCubit>().ingresarConGoogle(idToken),
+                alCredencial: (idToken) => context
+                    .read<AccesoCubit>()
+                    .ingresarConGoogle(idToken, rolDeseado: 'docente'),
               ),
             MensajeErrorAcceso(mensaje: estado.mensajeError),
           ],
