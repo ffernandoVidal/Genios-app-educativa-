@@ -10,14 +10,15 @@ import '../../../diseno/tokens/tipografia.dart';
 import 'acceso_cubit.dart';
 import 'mensaje_error_acceso.dart';
 
-/// Primera vez con Google: el rol docente se asigna solo si la persona lo confirma. Es permanente.
-class ConfirmarDocentePantalla extends StatelessWidget {
-  const ConfirmarDocentePantalla({super.key});
+/// Primera vez con Google: la persona elige si es estudiante o docente. La elección es permanente
+/// y la valida el servidor; la app solo envía la opción elegida.
+class ElegirRolPantalla extends StatelessWidget {
+  const ElegirRolPantalla({super.key});
 
   @override
   Widget build(BuildContext context) {
     return PlantillaPantalla(
-      titulo: 'Confirma tu cuenta docente',
+      titulo: 'Elige tu rol',
       hijo: BlocBuilder<AccesoCubit, EstadoAcceso>(
         builder: (context, estado) => Column(
           mainAxisSize: MainAxisSize.min,
@@ -25,13 +26,13 @@ class ConfirmarDocentePantalla extends StatelessWidget {
             const AstronautaGenios(alto: 140),
             const SizedBox(height: Espaciado.l),
             Text(
-              '¿Eres docente?',
+              '¿Cómo vas a usar GENIOS?',
               textAlign: TextAlign.center,
               style: Tipografia.titulo(26),
             ),
             const SizedBox(height: Espaciado.m),
             Text(
-              'Al confirmar, esta cuenta de Google será una cuenta de docente para siempre: podrás crear clases y ver el progreso de tus estudiantes. Una cuenta docente no puede jugar como estudiante.',
+              'Esta elección es permanente: una cuenta de estudiante no puede ser de docente, ni al revés.',
               textAlign: TextAlign.center,
               style: Tipografia.texto(18, color: ColoresGenios.textoSuave),
             ),
@@ -40,9 +41,17 @@ class ConfirmarDocentePantalla extends StatelessWidget {
               const CircularProgressIndicator()
             else ...[
               BotonPrincipalJuego(
-                texto: 'SÍ, SOY DOCENTE',
-                icono: Icons.check_circle_rounded,
-                alPulsar: () => context.read<AccesoCubit>().confirmarDocente(),
+                texto: 'SOY ESTUDIANTE',
+                icono: Icons.rocket_launch_rounded,
+                alPulsar: () =>
+                    context.read<AccesoCubit>().elegirRol('estudiante'),
+              ),
+              const SizedBox(height: Espaciado.m),
+              BotonPrincipalJuego(
+                texto: 'SOY DOCENTE',
+                icono: Icons.school_rounded,
+                alPulsar: () =>
+                    context.read<AccesoCubit>().elegirRol('docente'),
               ),
               const SizedBox(height: Espaciado.m),
               BotonSecundarioJuego(

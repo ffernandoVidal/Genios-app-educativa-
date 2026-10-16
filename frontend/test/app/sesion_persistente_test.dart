@@ -138,8 +138,8 @@ void main() {
       'una identidad nueva ve la confirmación y no entra al panel sin confirmar',
       (t) async {
         final app = await abrirPendiente(t);
-        expect(app.sesion.modo, ModoSesion.docentePendiente);
-        expect(find.text('¿Eres docente?'), findsOneWidget);
+        expect(app.sesion.modo, ModoSesion.rolPendiente);
+        expect(find.text('¿Cómo vas a usar GENIOS?'), findsOneWidget);
         expect(find.text('Inicio'), findsNothing);
       },
     );
@@ -148,16 +148,33 @@ void main() {
       t,
     ) async {
       final app = await abrirPendiente(t);
-      await t.tap(find.text('SÍ, SOY DOCENTE'));
+      await t.tap(find.text('SOY DOCENTE'));
       await t.pumpAndSettle();
 
-      expect(app.acceso.confirmacionesDocente, 1);
+      expect(app.acceso.rolesElegidos, ['docente']);
       expect(app.sesion.modo, ModoSesion.docente);
       expect(app.sesion.tokenAcceso, 'TOKEN-DOCENTE');
-      expect(find.text('¿Eres docente?'), findsNothing);
+      expect(find.text('¿Cómo vas a usar GENIOS?'), findsNothing);
     });
 
-    testWidgets('cancelar cierra la sesión y vuelve al acceso docente', (
+    testWidgets(
+      'se ofrecen las dos opciones y elegir estudiante lleva a la cabina',
+      (t) async {
+        final app = await abrirPendiente(t);
+        expect(find.text('SOY ESTUDIANTE'), findsOneWidget);
+        expect(find.text('SOY DOCENTE'), findsOneWidget);
+
+        await t.tap(find.text('SOY ESTUDIANTE'));
+        await t.pumpAndSettle();
+
+        expect(app.acceso.rolesElegidos, ['estudiante']);
+        expect(app.sesion.modo, ModoSesion.estudiante);
+        expect(find.text('¿Cómo vas a usar GENIOS?'), findsNothing);
+        expect(find.text('Inicio'), findsNothing);
+      },
+    );
+
+    testWidgets('cancelar cierra la sesión y vuelve a la bienvenida', (
       t,
     ) async {
       final app = await abrirPendiente(t);
@@ -166,8 +183,8 @@ void main() {
 
       expect(app.acceso.cierres, 1);
       expect(app.sesion.activa, isFalse);
-      expect(find.text('¿Eres docente?'), findsNothing);
-      expect(find.text('Acceso docente'), findsOneWidget);
+      expect(find.text('¿Cómo vas a usar GENIOS?'), findsNothing);
+      expect(find.text('JUGAR'), findsOneWidget);
     });
 
     testWidgets('si el servidor lo rechaza, se explica y no se cambia de rol', (
@@ -186,12 +203,12 @@ void main() {
       await t.pumpAndSettle();
       await t.tap(find.text('CONTINUAR CON GOOGLE'));
       await t.pumpAndSettle();
-      await t.tap(find.text('SÍ, SOY DOCENTE'));
+      await t.tap(find.text('SOY DOCENTE'));
       await t.pumpAndSettle();
 
-      expect(app.sesion.modo, ModoSesion.docentePendiente);
+      expect(app.sesion.modo, ModoSesion.rolPendiente);
       expect(
-        find.text('Esta cuenta ya tiene un rol y no puede ser de docente.'),
+        find.text('Esta cuenta ya tiene un rol y no puede cambiarlo.'),
         findsOneWidget,
       );
     });

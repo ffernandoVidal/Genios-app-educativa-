@@ -130,7 +130,7 @@ class FalsoAcceso implements RepositorioAcceso {
   List<String>?
   rolesPerfil; // lo que responde /usuarios/yo; null = los de la cuenta
   int renovaciones = 0;
-  int confirmacionesDocente = 0;
+  final rolesElegidos = <String>[];
   ExcepcionApi? errorConfirmar;
 
   @override
@@ -150,12 +150,12 @@ class FalsoAcceso implements RepositorioAcceso {
   Future<bool> hayInvitadoVigente() async => invitadoVigente;
 
   @override
-  Future<ResultadoAcceso> confirmarRolDocente() async {
-    confirmacionesDocente++;
+  Future<ResultadoAcceso> elegirRol(String rol) async {
+    rolesElegidos.add(rol);
     if (errorConfirmar != null) throw errorConfirmar!;
-    return const ResultadoAcceso(
-      tokenAcceso: 'TOKEN-DOCENTE',
-      roles: ['docente'],
+    return ResultadoAcceso(
+      tokenAcceso: 'TOKEN-${rol.toUpperCase()}',
+      roles: [rol],
       nombreMostrar: 'Profe Rosa',
     );
   }

@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../core/sesion/sesion_app.dart';
 import '../features/acceso/dominio/restaurador_sesion.dart';
 import '../features/acceso/presentacion/activar_pantalla.dart';
-import '../features/acceso/presentacion/confirmar_docente_pantalla.dart';
+import '../features/acceso/presentacion/elegir_rol_pantalla.dart';
 import '../features/acceso/presentacion/restaurando_pantalla.dart';
 import '../features/acceso/presentacion/bienvenida_pantalla.dart';
 import '../features/acceso/presentacion/docente_pantalla.dart';
@@ -64,12 +64,12 @@ GoRouter crearEnrutador(
         return (desde == null || desde.startsWith('/cargando')) ? '/' : desde;
       }
 
-      // Identidad de Google sin rol: solo puede confirmar que es docente (o salir).
-      if (sesion.modo == ModoSesion.docentePendiente) {
-        return ruta == '/docente/confirmar' ? null : '/docente/confirmar';
+      // Identidad de Google sin rol: solo puede elegir su rol (o salir).
+      if (sesion.modo == ModoSesion.rolPendiente) {
+        return ruta == '/elegir-rol' ? null : '/elegir-rol';
       }
-      if (ruta == '/docente/confirmar') {
-        if (!sesion.activa) return '/docente';
+      if (ruta == '/elegir-rol') {
+        if (!sesion.activa) return '/';
         return sesion.modo == ModoSesion.docente
             ? '/docente/inicio'
             : '/cabina';
@@ -104,8 +104,8 @@ GoRouter crearEnrutador(
       ),
       GoRoute(path: '/', builder: (_, _) => const BienvenidaPantalla()),
       GoRoute(
-        path: '/docente/confirmar',
-        builder: (_, _) => const ConfirmarDocentePantalla(),
+        path: '/elegir-rol',
+        builder: (_, _) => const ElegirRolPantalla(),
       ),
       GoRoute(path: '/jugar', builder: (_, _) => const JugarPantalla()),
       GoRoute(path: '/ingresar', builder: (_, _) => const IngresarPantalla()),

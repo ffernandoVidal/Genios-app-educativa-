@@ -43,8 +43,8 @@ class RepositorioAccesoApi implements RepositorioAcceso {
   }
 
   @override
-  Future<ResultadoAcceso> confirmarRolDocente() async =>
-      _resultado(await _api.enviar('/autenticacion/docente/confirmar'));
+  Future<ResultadoAcceso> elegirRol(String rol) async =>
+      _resultado(await _api.enviar('/autenticacion/rol', {'rol': rol}));
 
   @override
   Future<void> crearSesionInvitado() => _api.enviar('/sesiones-juego');

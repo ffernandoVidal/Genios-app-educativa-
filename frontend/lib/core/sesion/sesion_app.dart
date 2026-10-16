@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-/// `docentePendiente`: identidad de Google sin rol todavía; debe confirmar que es docente para entrar al panel.
-enum ModoSesion { ninguna, invitado, estudiante, docente, docentePendiente }
+/// `rolPendiente`: identidad de Google sin rol todavía; debe elegir si es estudiante o docente (permanente).
+enum ModoSesion { ninguna, invitado, estudiante, docente, rolPendiente }
 
 /// Al abrir la app se intenta recuperar la sesión: mientras tanto no se sabe quién es el usuario.
 enum EstadoRestauracion { restaurando, error, lista }
@@ -50,7 +50,7 @@ class SesionApp extends ChangeNotifier {
     _modo = roles.contains('docente')
         ? ModoSesion.docente
         : roles.isEmpty
-        ? ModoSesion.docentePendiente
+        ? ModoSesion.rolPendiente
         : ModoSesion.estudiante;
     _tokenAcceso = tokenAcceso;
     _nombre = nombre;

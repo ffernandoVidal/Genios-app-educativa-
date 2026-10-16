@@ -10,8 +10,8 @@ public interface IServicioAutenticacion
     Task<ResultadoSesion> RenovarAsync(string tokenRenovacion, ContextoSolicitud contexto, CancellationToken ct);
     /// <summary>Idempotente: sin token o con un token desconocido no hace nada.</summary>
     Task CerrarSesionAsync(string? tokenRenovacion, CancellationToken ct);
-    /// <summary>Confirma el rol docente de una identidad nueva de Google (sin rol). Permanente y exclusivo.</summary>
-    Task<RespuestaAutenticacion> ConfirmarRolDocenteAsync(Guid usuarioId, ContextoSolicitud contexto, CancellationToken ct);
+    /// <summary>Una identidad nueva de Google (sin rol) elige estudiante o docente. Permanente y exclusivo.</summary>
+    Task<RespuestaAutenticacion> ConfirmarRolAsync(Guid usuarioId, string rol, ContextoSolicitud contexto, CancellationToken ct);
     Task<UsuarioDto> ObtenerUsuarioAsync(Guid usuarioId, CancellationToken ct);
 
     /// <summary>El docente emite un código temporal de un solo uso para un estudiante de su aula.</summary>

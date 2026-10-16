@@ -92,10 +92,10 @@ class AccesoCubit extends Cubit<EstadoAcceso> {
     });
   }
 
-  /// El servidor concede el rol docente (permanente) y entrega un token nuevo con ese rol.
-  Future<void> confirmarDocente() async {
+  /// El servidor concede el rol elegido (permanente) y entrega un token nuevo con ese rol.
+  Future<void> elegirRol(String rol) async {
     await _ejecutar(() async {
-      final resultado = await _repositorio.confirmarRolDocente();
+      final resultado = await _repositorio.elegirRol(rol);
       _sesion.iniciarCuenta(
         tokenAcceso: resultado.tokenAcceso,
         roles: resultado.roles,
@@ -171,8 +171,7 @@ class AccesoCubit extends Cubit<EstadoAcceso> {
     'google_correo_no_verificado' => 'Tu correo de Google no está verificado.',
     'correo_ya_registrado' => 'Ese correo ya está asociado a otra cuenta.',
     'cuenta_no_activa' => 'Esta cuenta no está activa.',
-    'rol_no_permitido' =>
-      'Esta cuenta ya tiene un rol y no puede ser de docente.',
+    'rol_no_permitido' => 'Esta cuenta ya tiene un rol y no puede cambiarlo.',
     _ => e.mensaje,
   };
 }

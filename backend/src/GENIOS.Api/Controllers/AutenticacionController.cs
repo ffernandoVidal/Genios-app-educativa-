@@ -1,4 +1,5 @@
 using GENIOS.Application.Autenticacion;
+using GENIOS.Domain.Rules;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -23,12 +24,19 @@ public class AutenticacionController(IServicioAutenticacion servicio) : Controla
     public async Task<ActionResult<RespuestaAutenticacion>> Renovar(CancellationToken ct) =>
         ResponderSesion(await servicio.RenovarAsync(LeerCookieRenovacion(), Contexto, ct));
 
-    /// <summary>Confirma el rol docente de una identidad nueva de Google. Permanente; el rol lo decide el servidor.</summary>
+    /// <summary>Elige estudiante o docente (identidad nueva de Google sin rol). Permanente; el servidor lo valida.</summary>
+    [HttpPost("rol")]
+    [Authorize]
+    [EnableRateLimiting("autenticacion")]
+    public async Task<ActionResult<RespuestaAutenticacion>> ElegirRol(SolicitudElegirRol solicitud, CancellationToken ct) =>
+        await servicio.ConfirmarRolAsync(UsuarioId, solicitud.Rol, Contexto, ct);
+
+    /// <summary>Compatibilidad: equivale a elegir el rol docente.</summary>
     [HttpPost("docente/confirmar")]
     [Authorize]
     [EnableRateLimiting("autenticacion")]
     public async Task<ActionResult<RespuestaAutenticacion>> ConfirmarDocente(CancellationToken ct) =>
-        await servicio.ConfirmarRolDocenteAsync(UsuarioId, Contexto, ct);
+        await servicio.ConfirmarRolAsync(UsuarioId, CodigosRol.Docente, Contexto, ct);
 
     /// <summary>Idempotente: funciona igual con o sin sesión. Siempre limpia las cookies de renovación y de invitado.</summary>
     [HttpPost("cerrar-sesion")]

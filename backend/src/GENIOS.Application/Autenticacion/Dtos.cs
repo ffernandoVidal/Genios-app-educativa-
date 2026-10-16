@@ -6,6 +6,8 @@ public record SolicitudInicioSesionEstudiante(string NombreUsuario, string Contr
 
 public record SolicitudGoogle(string IdToken);
 
+public record SolicitudElegirRol(string Rol);
+
 public record SolicitudConfirmarRestablecimiento(string NombreUsuario, string Codigo, string ContrasenaNueva);
 
 public record UsuarioDto(Guid Id, string NombreMostrar, string? NombreUsuario, string? Correo, IReadOnlyList<string> Roles);

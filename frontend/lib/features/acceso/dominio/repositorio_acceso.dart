@@ -30,8 +30,8 @@ abstract class RepositorioAcceso {
   /// true si la cookie de invitado del navegador sigue siendo válida.
   Future<bool> hayInvitadoVigente();
 
-  /// Confirma el rol docente (permanente). El servidor decide si corresponde.
-  Future<ResultadoAcceso> confirmarRolDocente();
+  /// Elige el rol de una identidad nueva de Google: 'estudiante' o 'docente' (permanente). El servidor decide si corresponde.
+  Future<ResultadoAcceso> elegirRol(String rol);
 
   /// Crea (o reutiliza, si el navegador ya tiene la cookie) la sesión de invitado.
   /// La API no recibe ningún dato personal: la identidad de la sesión la genera el servidor.

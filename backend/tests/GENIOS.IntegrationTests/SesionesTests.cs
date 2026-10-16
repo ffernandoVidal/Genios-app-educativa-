@@ -269,6 +269,56 @@ public class SesionesTests(FixtureJuego f)
         Assert.Equal(0, await f.Escalar<long>("select count(*) from perfiles_docente where usuario_id = @u", ("u", datos.Usuario.Id)));
     }
 
+    private static Task<HttpResponseMessage> ElegirRol(HttpClient cliente, string rol) =>
+        cliente.PostAsJsonAsync("/api/v1/autenticacion/rol", new SolicitudElegirRol(rol));
+
+    [Fact]
+    public async Task Una_identidad_nueva_de_google_puede_elegir_ser_estudiante_y_ya_no_cambia()
+    {
+        var cliente = ClienteConGoogle(Identidad("sx5"));
+        var pendiente = (await (await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("x")))
+            .Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
+        ConToken(cliente, pendiente.TokenAcceso);
+
+        var elegido = await ElegirRol(cliente, "estudiante");
+        Assert.Equal(HttpStatusCode.OK, elegido.StatusCode);
+        var datos = (await elegido.Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
+        Assert.Equal(["estudiante"], datos.Usuario.Roles);
+        Assert.Equal(1, await f.Escalar<long>("select count(*) from perfiles_estudiante where usuario_id = @u", ("u", pendiente.Usuario.Id)));
+        Assert.Equal(0, await f.Escalar<long>("select count(*) from perfiles_docente where usuario_id = @u", ("u", pendiente.Usuario.Id)));
+
+        // Elegir lo mismo es idempotente; cambiar a docente se rechaza, también por la ruta de compatibilidad.
+        ConToken(cliente, datos.TokenAcceso);
+        Assert.Equal(HttpStatusCode.OK, (await ElegirRol(cliente, "estudiante")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await ElegirRol(cliente, "docente")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await Confirmar(cliente)).StatusCode);
+        Assert.Equal(1, await f.Escalar<long>("select count(*) from usuarios_roles where usuario_id = @u", ("u", pendiente.Usuario.Id)));
+
+        // Entra como estudiante al iniciar sesión otra vez.
+        cliente.DefaultRequestHeaders.Authorization = null;
+        var otra = (await (await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("x")))
+            .Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
+        Assert.Equal(["estudiante"], otra.Usuario.Roles);
+    }
+
+    [Fact]
+    public async Task Un_docente_no_puede_pasar_a_estudiante_y_un_rol_inventado_se_rechaza()
+    {
+        var cliente = ClienteConGoogle(Identidad("sx6"));
+        var pendiente = (await (await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("x")))
+            .Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
+        ConToken(cliente, pendiente.TokenAcceso);
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await ElegirRol(cliente, "administrador")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await ElegirRol(cliente, "invitado")).StatusCode);
+        Assert.Equal(0, await f.Escalar<long>("select count(*) from usuarios_roles where usuario_id = @u", ("u", pendiente.Usuario.Id)));
+
+        var docente = (await (await ElegirRol(cliente, "docente")).Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
+        ConToken(cliente, docente.TokenAcceso);
+        Assert.Equal(HttpStatusCode.Forbidden, (await ElegirRol(cliente, "estudiante")).StatusCode);
+        Assert.Equal(0, await f.Escalar<long>("select count(*) from perfiles_estudiante where usuario_id = @u", ("u", pendiente.Usuario.Id)));
+    }
+
     [Fact]
     public async Task Confirmar_el_rol_exige_estar_autenticado()
     {

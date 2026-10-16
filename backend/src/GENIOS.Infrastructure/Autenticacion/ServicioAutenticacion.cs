@@ -226,7 +226,7 @@ public class ServicioAutenticacion(
 
     /// <summary>
     /// Identidad nueva de Google: se crea sin rol y sin perfiles. El rol docente se concede solo al confirmarlo
-    /// (<see cref="ConfirmarRolDocenteAsync"/>), nunca por un parámetro de la solicitud.
+    /// (<see cref="ConfirmarRolAsync"/>), nunca por un parámetro de la solicitud.
     /// </summary>
     private async Task<Usuarios> CrearUsuarioGoogleAsync(DatosGoogle datos, CancellationToken ct)
     {
@@ -270,19 +270,23 @@ public class ServicioAutenticacion(
         return usuario;
     }
 
-    public async Task<RespuestaAutenticacion> ConfirmarRolDocenteAsync(Guid usuarioId, ContextoSolicitud contexto, CancellationToken ct)
+    public async Task<RespuestaAutenticacion> ConfirmarRolAsync(Guid usuarioId, string rol, ContextoSolicitud contexto, CancellationToken ct)
     {
+        var rolElegido = (rol ?? "").Trim().ToLowerInvariant();
+        if (rolElegido is not (CodigosRol.Docente or CodigosRol.Estudiante))
+            throw Error(TipoError.Validacion, "rol_invalido", "Elige estudiante o docente.");
+
         var usuario = await bd.Usuarios.SingleOrDefaultAsync(u => u.Id == usuarioId && u.Estado == "activo", ct)
             ?? throw Error(TipoError.NoAutenticado, "usuario_no_encontrado", "No se encontró el usuario.");
         if (usuario.MetodoRegistro != "google")
-            throw Error(TipoError.Prohibido, "rol_no_permitido", "Esta cuenta no puede ser docente.");
+            throw Error(TipoError.Prohibido, "rol_no_permitido", "Esta cuenta no puede elegir rol.");
 
-        var rolDocenteId = await ObtenerRolIdAsync(CodigosRol.Docente, ct);
+        var rolId = await ObtenerRolIdAsync(rolElegido, ct);
         var roles = await ObtenerRolesAsync(usuarioId, ct);
 
-        if (!roles.Contains(CodigosRol.Docente))
+        if (!roles.Contains(rolElegido))
         {
-            // Los roles son exclusivos: una cuenta que ya tiene otro rol (estudiante) nunca pasa a docente.
+            // Los roles son exclusivos y permanentes: una cuenta que ya tiene otro rol nunca lo cambia.
             if (roles.Count > 0)
                 throw Error(TipoError.Prohibido, "rol_no_permitido", "Esta cuenta ya tiene un rol y no puede cambiarlo.");
 
@@ -290,9 +294,16 @@ public class ServicioAutenticacion(
             try
             {
                 await using var transaccion = await bd.Database.BeginTransactionAsync(ct);
-                if (!await bd.PerfilesDocente.AnyAsync(p => p.UsuarioId == usuarioId, ct))
-                    bd.PerfilesDocente.Add(new PerfilesDocente { UsuarioId = usuarioId, CorreoEducativo = usuario.Correo, VerificadoEn = DateTime.UtcNow });
-                bd.UsuariosRoles.Add(new UsuariosRoles { UsuarioId = usuarioId, RolId = rolDocenteId });
+                if (rolElegido == CodigosRol.Docente)
+                {
+                    if (!await bd.PerfilesDocente.AnyAsync(p => p.UsuarioId == usuarioId, ct))
+                        bd.PerfilesDocente.Add(new PerfilesDocente { UsuarioId = usuarioId, CorreoEducativo = usuario.Correo, VerificadoEn = DateTime.UtcNow });
+                }
+                else if (!await bd.PerfilesEstudiante.AnyAsync(p => p.UsuarioId == usuarioId, ct))
+                {
+                    bd.PerfilesEstudiante.Add(new PerfilesEstudiante { UsuarioId = usuarioId, Activo = true });
+                }
+                bd.UsuariosRoles.Add(new UsuariosRoles { UsuarioId = usuarioId, RolId = rolId });
                 await bd.SaveChangesAsync(ct);
                 await transaccion.CommitAsync(ct);
                 concedido = true;
@@ -302,9 +313,9 @@ public class ServicioAutenticacion(
                 // Dos confirmaciones a la vez: gana una; la otra encuentra el rol ya concedido.
                 bd.ChangeTracker.Clear();
             }
-            if (concedido) await auditoria.RegistrarAsync("docente_confirmado", usuarioId, contexto);
+            if (concedido) await auditoria.RegistrarAsync(rolElegido == CodigosRol.Docente ? "docente_confirmado" : "estudiante_confirmado", usuarioId, contexto);
             roles = await ObtenerRolesAsync(usuarioId, ct);
-            if (!roles.Contains(CodigosRol.Docente) || roles.Count != 1)
+            if (!roles.Contains(rolElegido) || roles.Count != 1)
                 throw Error(TipoError.Prohibido, "rol_no_permitido", "Esta cuenta ya tiene un rol y no puede cambiarlo.");
         }
 
