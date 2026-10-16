@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../core/sesion/sesion_app.dart';
 import '../../../diseno/componentes/astronauta_genios.dart';
 import '../../../diseno/componentes/botones_juego.dart';
 import '../../../diseno/componentes/fondo_espacial.dart';
@@ -42,6 +45,22 @@ class BienvenidaPantalla extends StatelessWidget {
                       children: [
                         const _Logotipo(),
                         const SizedBox(height: Espaciado.s),
+                        if (context.read<FuenteModoSesion>().avisoCierre
+                            case final aviso?) ...[
+                          Semantics(
+                            liveRegion: true,
+                            child: Text(
+                              aviso,
+                              textAlign: TextAlign.center,
+                              style: Tipografia.texto(
+                                17,
+                                peso: 800,
+                                color: ColoresGenios.aviso,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: Espaciado.s),
+                        ],
                         Text(
                           '¡Hola, explorador! Aprende jugando por el espacio.',
                           textAlign: TextAlign.center,

@@ -33,14 +33,17 @@ public abstract class ControladorBase : ControllerBase
 
     /// <summary>Guarda la sesión de invitado en una cookie HttpOnly. El token no viaja en el cuerpo.</summary>
     protected void GuardarCookieInvitado(string token, DateTime expira) =>
-        Response.Cookies.Append(ManejadorAutenticacionInvitado.NombreCookie, token, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = Opciones.CookieSegura,
-            SameSite = Enum.Parse<SameSiteMode>(Opciones.CookieSameSite, ignoreCase: true),
-            Expires = expira,
-            Path = "/"
-        });
+        Response.Cookies.Append(ManejadorAutenticacionInvitado.NombreCookie, token, AtributosCookie("/", expira));
+
+    /// <summary>Atributos de las cookies. Borrar exige los mismos Path y SameSite con que se emitieron.</summary>
+    private CookieOptions AtributosCookie(string ruta, DateTimeOffset? expira) => new()
+    {
+        HttpOnly = true,
+        Secure = Opciones.CookieSegura,
+        SameSite = Enum.Parse<SameSiteMode>(Opciones.CookieSameSite, ignoreCase: true),
+        Expires = expira,
+        Path = ruta
+    };
 
     private OpcionesAutenticacion Opciones =>
         HttpContext.RequestServices.GetRequiredService<IOptions<OpcionesAutenticacion>>().Value;
@@ -48,14 +51,7 @@ public abstract class ControladorBase : ControllerBase
     /// <summary>Guarda el token de renovación en una cookie HttpOnly y devuelve solo el token de acceso.</summary>
     protected ActionResult<RespuestaAutenticacion> ResponderSesion(ResultadoSesion resultado)
     {
-        Response.Cookies.Append(NombreCookie, resultado.TokenRenovacion, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = Opciones.CookieSegura,
-            SameSite = Enum.Parse<SameSiteMode>(Opciones.CookieSameSite, ignoreCase: true),
-            Expires = resultado.ExpiraTokenRenovacion,
-            Path = RutaCookie
-        });
+        Response.Cookies.Append(NombreCookie, resultado.TokenRenovacion, AtributosCookie(RutaCookie, resultado.ExpiraTokenRenovacion));
         return Ok(resultado.Respuesta);
     }
 
@@ -68,5 +64,16 @@ public abstract class ControladorBase : ControllerBase
             ?? throw new ExcepcionNegocio(TipoError.NoAutenticado, "sesion_invalida", "Inicia sesión de nuevo.");
     }
 
-    protected void BorrarCookieRenovacion() => Response.Cookies.Delete(NombreCookie, new CookieOptions { Path = RutaCookie });
+    /// <summary>Para el cierre de sesión: exige la cabecera anti-CSRF, pero sin cookie no es un error.</summary>
+    protected string? LeerCookieRenovacionOpcional()
+    {
+        if (!Request.Headers.ContainsKey(CabeceraAnticsrf))
+            throw new ExcepcionNegocio(TipoError.Prohibido, "cabecera_requerida", "Solicitud no permitida.");
+        return Request.Cookies[NombreCookie];
+    }
+
+    protected void BorrarCookieRenovacion() => Response.Cookies.Delete(NombreCookie, AtributosCookie(RutaCookie, null));
+
+    protected void BorrarCookieInvitado() =>
+        Response.Cookies.Delete(ManejadorAutenticacionInvitado.NombreCookie, AtributosCookie("/", null));
 }

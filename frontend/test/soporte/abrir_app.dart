@@ -43,6 +43,8 @@ Future<AppAbierta> abrirApp(
   AjustesApp? ajustes,
   Size? tamano,
   String googleClientId = 'cliente-de-prueba.apps.googleusercontent.com',
+  bool restaurarAlIniciar = false,
+  bool esperar = true,
 }) async {
   t.view.devicePixelRatio = 1.0;
   t.view.physicalSize = tamano ?? const Size(1000, 1800);
@@ -69,9 +71,11 @@ Future<AppAbierta> abrirApp(
       repositorioDocente: app.docente,
       ajustes: app.ajustes,
       googleClientId: googleClientId,
+      restaurarAlIniciar: restaurarAlIniciar,
     ),
   );
-  await t.pumpAndSettle();
+  // Con una carga en curso hay un indicador animado: pumpAndSettle no terminaría.
+  esperar ? await t.pumpAndSettle() : await t.pump();
   return app;
 }
 

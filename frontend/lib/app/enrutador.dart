@@ -1,7 +1,10 @@
 import 'package:go_router/go_router.dart';
 
 import '../core/sesion/sesion_app.dart';
+import '../features/acceso/dominio/restaurador_sesion.dart';
 import '../features/acceso/presentacion/activar_pantalla.dart';
+import '../features/acceso/presentacion/confirmar_docente_pantalla.dart';
+import '../features/acceso/presentacion/restaurando_pantalla.dart';
 import '../features/acceso/presentacion/bienvenida_pantalla.dart';
 import '../features/acceso/presentacion/docente_pantalla.dart';
 import '../features/acceso/presentacion/ingresar_pantalla.dart';
@@ -27,7 +30,11 @@ import '../features/salon/presentacion/salon_pantalla.dart';
 /// Recorrido aprobado: Bienvenida → Cabina → JUGAR → Materias → Misiones → Partida → Resultados.
 /// Las pantallas privadas exigen una sesión; si vence, se vuelve a la bienvenida.
 /// Esto solo ordena la navegación: la autorización real la hace siempre la API.
-GoRouter crearEnrutador(SesionApp sesion, {String googleClientId = ''}) {
+GoRouter crearEnrutador(
+  SesionApp sesion, {
+  String googleClientId = '',
+  required RestauradorSesion restaurador,
+}) {
   const soloSinSesion = {'/', '/jugar', '/ingresar'};
   const publicas = {
     '/',
@@ -43,6 +50,30 @@ GoRouter crearEnrutador(SesionApp sesion, {String googleClientId = ''}) {
     redirect: (context, estado) {
       final ruta = estado.uri.path;
       final esRutaDocente = ruta.startsWith('/docente/');
+
+      // Al abrir la app todavía no se sabe quién es el usuario: nada de pantallas de estudiante o docente.
+      if (sesion.restauracion != EstadoRestauracion.lista) {
+        if (ruta == '/cargando') return null;
+        return Uri(
+          path: '/cargando',
+          queryParameters: {'desde': estado.uri.toString()},
+        ).toString();
+      }
+      if (ruta == '/cargando') {
+        final desde = estado.uri.queryParameters['desde'];
+        return (desde == null || desde.startsWith('/cargando')) ? '/' : desde;
+      }
+
+      // Identidad de Google sin rol: solo puede confirmar que es docente (o salir).
+      if (sesion.modo == ModoSesion.docentePendiente) {
+        return ruta == '/docente/confirmar' ? null : '/docente/confirmar';
+      }
+      if (ruta == '/docente/confirmar') {
+        if (!sesion.activa) return '/docente';
+        return sesion.modo == ModoSesion.docente
+            ? '/docente/inicio'
+            : '/cabina';
+      }
       // Sin sesión: el Centro de Control pide el acceso docente; el resto vuelve a la bienvenida.
       if (!sesion.activa && esRutaDocente) return '/docente';
       if (!sesion.activa && !publicas.contains(ruta)) return '/';
@@ -66,7 +97,16 @@ GoRouter crearEnrutador(SesionApp sesion, {String googleClientId = ''}) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/cargando',
+        builder: (_, _) =>
+            RestaurandoPantalla(sesion: sesion, restaurador: restaurador),
+      ),
       GoRoute(path: '/', builder: (_, _) => const BienvenidaPantalla()),
+      GoRoute(
+        path: '/docente/confirmar',
+        builder: (_, _) => const ConfirmarDocentePantalla(),
+      ),
       GoRoute(path: '/jugar', builder: (_, _) => const JugarPantalla()),
       GoRoute(path: '/ingresar', builder: (_, _) => const IngresarPantalla()),
       GoRoute(path: '/activar', builder: (_, _) => const ActivarPantalla()),

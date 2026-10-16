@@ -1,6 +1,10 @@
 import 'package:flutter/foundation.dart';
 
-enum ModoSesion { ninguna, invitado, estudiante, docente }
+/// `docentePendiente`: identidad de Google sin rol todavía; debe confirmar que es docente para entrar al panel.
+enum ModoSesion { ninguna, invitado, estudiante, docente, docentePendiente }
+
+/// Al abrir la app se intenta recuperar la sesión: mientras tanto no se sabe quién es el usuario.
+enum EstadoRestauracion { restaurando, error, lista }
 
 /// Estado de la sesión en memoria. El token de acceso NO se guarda en el almacenamiento del navegador:
 /// al recargar, la sesión se recupera con la cookie HttpOnly que gestiona el servidor.
@@ -12,6 +16,13 @@ class SesionApp extends ChangeNotifier {
   String? _tokenAcceso;
   String _nombre = '';
   bool _invitacionDescartada = false;
+  EstadoRestauracion _restauracion = EstadoRestauracion.lista;
+  String? _avisoCierre;
+
+  EstadoRestauracion get restauracion => _restauracion;
+
+  /// Por qué se cerró la sesión sin que el usuario lo pidiera (se muestra una vez en la bienvenida).
+  String? get avisoCierre => _avisoCierre;
 
   ModoSesion get modo => _modo;
   String? get tokenAcceso => _tokenAcceso;
@@ -27,6 +38,7 @@ class SesionApp extends ChangeNotifier {
     _tokenAcceso = null;
     _nombre = nombre;
     _invitacionDescartada = false;
+    _avisoCierre = null;
     notifyListeners();
   }
 
@@ -37,10 +49,13 @@ class SesionApp extends ChangeNotifier {
   }) {
     _modo = roles.contains('docente')
         ? ModoSesion.docente
+        : roles.isEmpty
+        ? ModoSesion.docentePendiente
         : ModoSesion.estudiante;
     _tokenAcceso = tokenAcceso;
     _nombre = nombre;
     _invitacionDescartada = false;
+    _avisoCierre = null;
     notifyListeners();
   }
 
@@ -49,14 +64,36 @@ class SesionApp extends ChangeNotifier {
 
   void descartarInvitacion() => _invitacionDescartada = true;
 
-  /// Cierre voluntario o sesión vencida: se vuelve a la bienvenida.
-  void cerrar() {
-    if (_modo == ModoSesion.ninguna) return;
+  void marcarRestaurando() {
+    _restauracion = EstadoRestauracion.restaurando;
+    notifyListeners();
+  }
+
+  /// No se pudo saber si hay sesión (red o servidor): se puede reintentar sin perder nada.
+  void marcarErrorRestauracion() {
+    _restauracion = EstadoRestauracion.error;
+    notifyListeners();
+  }
+
+  void marcarRestauracionLista() {
+    _restauracion = EstadoRestauracion.lista;
+    notifyListeners();
+  }
+
+  /// Cierre voluntario o sesión vencida: se vuelve a la bienvenida. [aviso] explica un cierre involuntario.
+  void cerrar({String? aviso}) {
+    _avisoCierre = aviso;
+    if (_modo == ModoSesion.ninguna) {
+      if (aviso != null) notifyListeners();
+      return;
+    }
     _modo = ModoSesion.ninguna;
     _tokenAcceso = null;
     _nombre = '';
     notifyListeners();
   }
+
+  void consumirAviso() => _avisoCierre = null;
 }
 
 /// Vista de la sesión para inyectar en los Cubits sin exponer el `ChangeNotifier`.
@@ -68,6 +105,9 @@ class FuenteModoSesion {
   ModoSesion get modo => _sesion.modo;
   String get nombre => _sesion.nombre;
   bool get invitacionDescartada => _sesion.invitacionDescartada;
+  String? get avisoCierre => _sesion.avisoCierre;
+
+  void consumirAviso() => _sesion.consumirAviso();
 
   void descartarInvitacion() => _sesion.descartarInvitacion();
 }

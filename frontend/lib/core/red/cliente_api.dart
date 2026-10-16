@@ -26,6 +26,12 @@ class ClienteApi {
   final SesionApp _sesion;
   Future<bool>? _renovando;
 
+  /// Una sola consulta sin renovación ni cierre de sesión por 401: el llamador decide qué hacer (restauración al abrir).
+  Future<dynamic> consultarSinRenovar(String metodo, String ruta) async {
+    final respuesta = await _solicitar(metodo, ruta, null);
+    return _procesar(respuesta);
+  }
+
   Future<dynamic> obtener(String ruta) => _enviar('GET', ruta);
 
   Future<dynamic> enviar(String ruta, [Object? cuerpo]) =>
@@ -44,10 +50,16 @@ class ClienteApi {
     final respuesta = await _solicitar(metodo, ruta, cuerpo);
 
     if (respuesta.statusCode == 401 && _sesion.activa) {
+      // Un fallo de red al renovar NO es una sesión vencida: la excepción sube y la sesión se conserva.
       if (puedeRenovar && _sesion.tieneCuenta && await _renovarSesion()) {
         return _enviar(metodo, ruta, cuerpo: cuerpo, puedeRenovar: false);
       }
-      _sesion.cerrar(); // sesión vencida: se vuelve a la bienvenida
+      if (puedeRenovar &&
+          _sesion.modo == ModoSesion.invitado &&
+          await _reanudarInvitado()) {
+        return _enviar(metodo, ruta, cuerpo: cuerpo, puedeRenovar: false);
+      }
+      _sesion.cerrar(aviso: _avisoSesionPerdida());
     }
     return _procesar(respuesta);
   }
@@ -88,22 +100,29 @@ class ClienteApi {
   Future<bool> _renovarSesion() =>
       _renovando ??= _intentarRenovar().whenComplete(() => _renovando = null);
 
+  /// true = token nuevo; false = el servidor dice que la sesión ya no sirve (401/403).
+  /// Red caída o error del servidor lanzan [ExcepcionApi]: no se confunden con una sesión vencida.
   Future<bool> _intentarRenovar() async {
-    try {
-      final respuesta = await _solicitar(
-        'POST',
-        '/autenticacion/renovar',
-        null,
-      );
-      if (respuesta.statusCode != 200) return false;
-      final datos =
-          jsonDecode(utf8.decode(respuesta.bodyBytes)) as Map<String, dynamic>;
-      _sesion.actualizarToken(datos['tokenAcceso'] as String);
-      return true;
-    } on ExcepcionApi {
+    final respuesta = await _solicitar('POST', '/autenticacion/renovar', null);
+    if (respuesta.statusCode == 401 || respuesta.statusCode == 403) {
       return false;
     }
+    if (respuesta.statusCode != 200) _procesar(respuesta); // lanza el error
+    final datos =
+        jsonDecode(utf8.decode(respuesta.bodyBytes)) as Map<String, dynamic>;
+    _sesion.actualizarToken(datos['tokenAcceso'] as String);
+    return true;
   }
+
+  /// Invitado con la cookie vencida o ausente: se pide una sesión nueva (o se reutiliza la vigente) y se reintenta una vez.
+  Future<bool> _reanudarInvitado() async {
+    final respuesta = await _solicitar('POST', '/sesiones-juego', null);
+    return respuesta.statusCode == 200;
+  }
+
+  String _avisoSesionPerdida() => _sesion.modo == ModoSesion.invitado
+      ? 'No pudimos mantener tu sesión. Revisa que tu navegador permita cookies e inténtalo de nuevo.'
+      : 'Tu sesión venció. Inicia sesión de nuevo.';
 
   dynamic _procesar(http.Response respuesta) {
     final texto = utf8.decode(respuesta.bodyBytes);

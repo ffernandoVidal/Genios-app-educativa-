@@ -66,7 +66,7 @@ public class CuentasTests(FixtureJuego f)
     public async Task Una_credencial_de_google_invalida_se_rechaza_sin_crear_cuentas()
     {
         var cliente = f.Fabrica.CreateClient();
-        var respuesta = await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("no-es-un-token", true));
+        var respuesta = await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("no-es-un-token"));
         Assert.Equal(HttpStatusCode.Unauthorized, respuesta.StatusCode);
     }
 
@@ -147,14 +147,10 @@ public class CuentasTests(FixtureJuego f)
         public override Task<DatosGoogle> ValidarAsync(string idToken) => Task.FromResult(datos);
     }
 
-    private HttpClient ClienteConGoogle(DatosGoogle datos, bool docenteAbierto)
+    private HttpClient ClienteConGoogle(DatosGoogle datos)
     {
         var fabrica = f.Fabrica.WithWebHostBuilder(b =>
         {
-            b.ConfigureAppConfiguration((_, cfg) => cfg.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Autenticacion:DocentePorGoogleAbierto"] = docenteAbierto ? "true" : "false"
-            }));
             b.ConfigureTestServices(servicios =>
             {
                 servicios.RemoveAll<VerificadorGoogle>();
@@ -167,42 +163,41 @@ public class CuentasTests(FixtureJuego f)
     private DatosGoogle NuevaIdentidad(string etiqueta) =>
         new($"sub-{f.Etiqueta}-{etiqueta}", $"t{f.Etiqueta}{etiqueta}@prueba.invalid", "Docente de prueba");
 
+    /// <summary>Inicia con Google y confirma el rol docente: devuelve la sesión ya como docente.</summary>
+    private static async Task<RespuestaAutenticacion> EntrarComoDocenteAsync(HttpClient cliente)
+    {
+        var pendiente = (await (await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("x")))
+            .Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
+        cliente.DefaultRequestHeaders.Authorization = new("Bearer", pendiente.TokenAcceso);
+        var confirmado = (await (await cliente.PostAsync("/api/v1/autenticacion/docente/confirmar", null))
+            .Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
+        cliente.DefaultRequestHeaders.Authorization = new("Bearer", confirmado.TokenAcceso);
+        return confirmado;
+    }
+
     [Fact]
     public async Task El_primer_acceso_con_google_crea_un_docente_sin_aula_y_el_segundo_reutiliza_la_cuenta()
     {
         var identidad = NuevaIdentidad("g1");
-        var cliente = ClienteConGoogle(identidad, docenteAbierto: true);
+        var cliente = ClienteConGoogle(identidad);
 
-        var primero = await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("x", true));
-        Assert.Equal(HttpStatusCode.OK, primero.StatusCode);
-        var a = (await primero.Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
+        var a = await EntrarComoDocenteAsync(cliente);
         Assert.Contains("docente", a.Usuario.Roles);
-
-        cliente.DefaultRequestHeaders.Authorization = new("Bearer", a.TokenAcceso);
         Assert.Empty((await cliente.GetFromJsonAsync<List<AulaDto>>("/api/v1/aulas/mi-aula"))!);
 
-        var segundo = await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("x", true));
+        cliente.DefaultRequestHeaders.Authorization = null;
+
+        var segundo = await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("x"));
         var b = (await segundo.Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
         Assert.Equal(a.Usuario.Id, b.Usuario.Id);
         Assert.Equal(1, await f.Escalar<long>("select count(*) from identidades_externas where identificador_externo = @s", ("s", identidad.Sub)));
     }
 
     [Fact]
-    public async Task Sin_alta_abierta_una_cuenta_de_google_fuera_de_la_lista_no_recibe_rol_docente()
-    {
-        var cliente = ClienteConGoogle(NuevaIdentidad("g2"), docenteAbierto: false);
-        var respuesta = await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("x", true));
-        var datos = (await respuesta.Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
-        Assert.DoesNotContain("docente", datos.Usuario.Roles);
-    }
-
-    [Fact]
     public async Task Un_docente_de_google_solo_ve_sus_propias_aulas_y_no_las_ajenas()
     {
-        var cliente = ClienteConGoogle(NuevaIdentidad("g3"), docenteAbierto: true);
-        var sesion = (await (await cliente.PostAsJsonAsync("/api/v1/autenticacion/google", new SolicitudGoogle("x", true)))
-            .Content.ReadFromJsonAsync<RespuestaAutenticacion>())!;
-        cliente.DefaultRequestHeaders.Authorization = new("Bearer", sesion.TokenAcceso);
+        var cliente = ClienteConGoogle(NuevaIdentidad("g3"));
+        await EntrarComoDocenteAsync(cliente);
 
         var ajena = await cliente.GetAsync($"/api/v1/aulas/{f.AulaId}/estadisticas");
         Assert.True(ajena.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.NotFound);

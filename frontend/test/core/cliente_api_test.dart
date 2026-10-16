@@ -265,11 +265,11 @@ void main() {
       },
     );
 
-    test('un invitado con 401 (sesión vencida) vuelve a la bienvenida sin intentar renovar', () async {
+    test('un invitado con 401 intenta reanudar su sesión una vez y, si no puede, vuelve a la bienvenida con un aviso', () async {
       sesion.iniciarInvitado(nombre: 'Luna');
-      var llamadas = 0;
-      final api = crear((_) async {
-        llamadas++;
+      final rutas = <String>[];
+      final api = crear((r) async {
+        rutas.add('${r.method} ${r.url.path}');
         return json({}, 401);
       });
 
@@ -278,8 +278,62 @@ void main() {
         throwsA(isA<ExcepcionApi>()),
       );
 
-      expect(llamadas, 1);
+      expect(rutas, ['POST /v1/partidas', 'POST /v1/sesiones-juego']);
       expect(sesion.activa, isFalse);
+      expect(sesion.avisoCierre, contains('cookies'));
     });
+
+    test('un invitado con la cookie vencida recupera una sesión nueva y la solicitud se repite', () async {
+      sesion.iniciarInvitado(nombre: 'Luna');
+      var partidas = 0;
+      final api = crear((r) async {
+        if (r.url.path.endsWith('/sesiones-juego')) return json({});
+        partidas++;
+        return partidas == 1 ? json({}, 401) : json({'ok': true});
+      });
+
+      final respuesta = await api.enviar('/partidas', {});
+
+      expect(respuesta, {'ok': true});
+      expect(partidas, 2);
+      expect(sesion.modo, ModoSesion.invitado);
+    });
+
+    test('un fallo de red al renovar NO cierra la sesión: se informa la falta de conexión', () async {
+      sesion.iniciarCuenta(
+        tokenAcceso: 'VIEJO',
+        roles: ['estudiante'],
+        nombre: 'Ana',
+      );
+      final api = crear((r) async {
+        if (r.url.path.endsWith('/renovar')) throw Exception('sin red');
+        return json({}, 401);
+      });
+
+      await expectLater(
+        api.obtener('/estudiantes/yo/puntos'),
+        throwsA(isA<ExcepcionApi>().having((e) => e.estado, 'estado', isNull)),
+      );
+
+      expect(sesion.activa, isTrue);
+      expect(sesion.tokenAcceso, 'VIEJO');
+    });
+
+    test(
+      'una sesión vencida de verdad cierra con un aviso, no en silencio',
+      () async {
+        sesion.iniciarCuenta(
+          tokenAcceso: 'VIEJO',
+          roles: ['estudiante'],
+          nombre: 'Ana',
+        );
+        final api = crear((_) async => json({}, 401));
+
+        await expectLater(api.obtener('/x'), throwsA(isA<ExcepcionApi>()));
+
+        expect(sesion.activa, isFalse);
+        expect(sesion.avisoCierre, 'Tu sesión venció. Inicia sesión de nuevo.');
+      },
+    );
   });
 }

@@ -6,6 +6,7 @@ import '../core/ajustes/ajustes_app.dart';
 import '../core/sesion/sesion_app.dart';
 import '../diseno/tema/tema_genios.dart';
 import '../features/acceso/dominio/repositorio_acceso.dart';
+import '../features/acceso/dominio/restaurador_sesion.dart';
 import '../features/acceso/presentacion/acceso_cubit.dart';
 import '../features/catalogo/dominio/repositorio_catalogo.dart';
 import '../features/partida/dominio/repositorio_partida.dart';
@@ -27,6 +28,7 @@ class AppGenios extends StatefulWidget {
     required this.repositorioDocente,
     this.ajustes,
     this.googleClientId = '',
+    this.restaurarAlIniciar = false,
   });
 
   final SesionApp sesion;
@@ -43,16 +45,30 @@ class AppGenios extends StatefulWidget {
   /// Client ID público de Google para el acceso docente.
   final String googleClientId;
 
+  /// Al abrir, recupera la sesión existente (cookie de renovación o de invitado) antes de decidir la pantalla.
+  final bool restaurarAlIniciar;
+
   @override
   State<AppGenios> createState() => _AppGeniosState();
 }
 
 class _AppGeniosState extends State<AppGenios> {
+  late final RestauradorSesion _restaurador = RestauradorSesion(
+    widget.repositorioAcceso,
+    widget.sesion,
+  );
   late final GoRouter _enrutador = crearEnrutador(
     widget.sesion,
     googleClientId: widget.googleClientId,
+    restaurador: _restaurador,
   );
   late final AjustesApp _ajustes = widget.ajustes ?? AjustesApp();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.restaurarAlIniciar) _restaurador.restaurar();
+  }
 
   @override
   void dispose() {

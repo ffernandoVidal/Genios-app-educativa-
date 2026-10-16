@@ -31,7 +31,8 @@ Frontend Flutter Web en Cloudflare Pages, API en Render (Docker), PostgreSQL en 
 | `Autenticacion__Clave` | clave larga aleatoria para firmar el JWT (puedes usar la actual o generar otra) |
 | `Autenticacion__GoogleClientId` | el ID de cliente público de Google |
 | `Cors__OrigenesPermitidos__0` | `https://TU-PROYECTO.pages.dev` (sin barra final) |
-| `Autenticacion__DocentePorGoogleAbierto` | `false` (en `true`, cualquier cuenta Google es docente) |
+
+Sesiones, cookies y rol docente: ver `docs/sesiones.md` (la API en `api.genios.siacgt.com`).
 
 `Google__ClientSecret` no se usa y no hace falta en Render.
 

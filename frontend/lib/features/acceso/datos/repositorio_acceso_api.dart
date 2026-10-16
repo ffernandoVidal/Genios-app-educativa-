@@ -1,10 +1,50 @@
 import '../../../core/red/cliente_api.dart';
+import '../../../core/red/excepcion_api.dart';
 import '../dominio/repositorio_acceso.dart';
 
 class RepositorioAccesoApi implements RepositorioAcceso {
   RepositorioAccesoApi(this._api);
 
   final ClienteApi _api;
+
+  @override
+  Future<ResultadoAcceso?> renovarSesion() async {
+    try {
+      return _resultado(
+        await _api.consultarSinRenovar('POST', '/autenticacion/renovar'),
+      );
+    } on ExcepcionApi catch (e) {
+      if (e.estado == 401 || e.estado == 403) return null;
+      rethrow;
+    }
+  }
+
+  @override
+  Future<PerfilUsuario> obtenerPerfil() async {
+    final datos = await _api.consultarSinRenovar(
+      'GET',
+      '/usuarios/yo',
+    ) as Map<String, dynamic>;
+    return PerfilUsuario(
+      roles: (datos['roles'] as List<dynamic>).cast<String>(),
+      nombreMostrar: datos['nombreMostrar'] as String,
+    );
+  }
+
+  @override
+  Future<bool> hayInvitadoVigente() async {
+    try {
+      await _api.consultarSinRenovar('GET', '/sesiones-juego/yo');
+      return true;
+    } on ExcepcionApi catch (e) {
+      if (e.estado == 401 || e.estado == 403) return false;
+      rethrow;
+    }
+  }
+
+  @override
+  Future<ResultadoAcceso> confirmarRolDocente() async =>
+      _resultado(await _api.enviar('/autenticacion/docente/confirmar'));
 
   @override
   Future<void> crearSesionInvitado() => _api.enviar('/sesiones-juego');
@@ -52,10 +92,7 @@ class RepositorioAccesoApi implements RepositorioAcceso {
   @override
   Future<ResultadoAcceso> iniciarSesionGoogle(String idToken) async {
     return _resultado(
-      await _api.enviar('/autenticacion/google', {
-        'idToken': idToken,
-        'solicitaRolDocente': true,
-      }),
+      await _api.enviar('/autenticacion/google', {'idToken': idToken}),
     );
   }
 

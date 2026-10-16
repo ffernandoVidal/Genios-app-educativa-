@@ -9,7 +9,8 @@ El cliente web debe enviar credenciales (cookies) y el origen debe estar en `Cor
 |---|---|---|
 | `GET /health`, `GET /health/ready` | público | fuera de `/api/v1` |
 | `POST /autenticacion/estudiante/iniciar-sesion` | público | `{nombreUsuario, contrasena}` → token de acceso; cookie de renovación |
-| `POST /autenticacion/google` | público | `{idToken, solicitaRolDocente}`. Valida firma, vencimiento y audiencia (`Autenticacion__GoogleClientId`). Primer acceso: crea la cuenta sin aula; el rol docente se concede si el dominio está en `DominiosDocentes` o `Autenticacion__DocentePorGoogleAbierto=true` (solo desarrollo). Errores: `google_token_invalido` 401, `google_no_configurado` 503, `google_correo_no_verificado` 401, `correo_ya_registrado` 409. Probado con verificador simulado; **falta probar con un token real en el navegador** |
+| `POST /autenticacion/google` | público | `{idToken}`. Valida firma, vencimiento y audiencia. Una identidad nueva queda **sin rol ni perfiles** (`roles: []`) hasta confirmar. Errores: `google_token_invalido` 401, `google_no_configurado` 503, `google_correo_no_verificado` 401, `correo_ya_registrado` 409 |
+| `POST /autenticacion/docente/confirmar` | Bearer | Concede el rol docente (permanente) a una identidad de Google sin rol. 403 `rol_no_permitido` si ya tiene otro rol |
 | `POST /autenticacion/renovar` | cookie renovación | rota el refresh token |
 | `POST /autenticacion/cerrar-sesion` | cookie renovación | revoca la familia de tokens |
 | `GET /usuarios/yo` | Bearer | id, nombre, roles |

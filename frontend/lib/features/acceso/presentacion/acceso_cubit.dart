@@ -92,6 +92,18 @@ class AccesoCubit extends Cubit<EstadoAcceso> {
     });
   }
 
+  /// El servidor concede el rol docente (permanente) y entrega un token nuevo con ese rol.
+  Future<void> confirmarDocente() async {
+    await _ejecutar(() async {
+      final resultado = await _repositorio.confirmarRolDocente();
+      _sesion.iniciarCuenta(
+        tokenAcceso: resultado.tokenAcceso,
+        roles: resultado.roles,
+        nombre: resultado.nombreMostrar,
+      );
+    });
+  }
+
   Future<void> registrar({
     required String codigoAula,
     required String nombreMostrar,
@@ -124,14 +136,13 @@ class AccesoCubit extends Cubit<EstadoAcceso> {
     if (state.mensajeError != null) emit(const EstadoAcceso());
   }
 
-  /// Cierra la sesión. Si el servidor no responde, igual se sale de la app: el token vence solo.
+  /// Cierra la sesión: el servidor revoca la renovación y limpia las cookies (también la de invitado).
+  /// Es idempotente, así que se llama siempre. Si el servidor no responde, igual se sale de la app.
   Future<void> salir() async {
-    if (_sesion.tieneCuenta) {
-      try {
-        await _repositorio.cerrarSesion();
-      } on ExcepcionApi {
-        // Se ignora: la salida local no depende del servidor.
-      }
+    try {
+      await _repositorio.cerrarSesion();
+    } on ExcepcionApi {
+      // Se ignora: la salida local no depende del servidor.
     }
     _sesion.cerrar();
   }
@@ -160,6 +171,8 @@ class AccesoCubit extends Cubit<EstadoAcceso> {
     'google_correo_no_verificado' => 'Tu correo de Google no está verificado.',
     'correo_ya_registrado' => 'Ese correo ya está asociado a otra cuenta.',
     'cuenta_no_activa' => 'Esta cuenta no está activa.',
+    'rol_no_permitido' =>
+      'Esta cuenta ya tiene un rol y no puede ser de docente.',
     _ => e.mensaje,
   };
 }

@@ -9,16 +9,16 @@ public class OpcionesAutenticacion
     public string Emisor { get; set; } = "GENIOS";
     public string Audiencia { get; set; } = "GENIOS.Clientes";
     public int MinutosAcceso { get; set; } = 15;
-    public int DiasRenovacion { get; set; } = 7;
+    /// <summary>Vigencia de cada token de renovación, que se rota en cada uso.</summary>
+    public int DiasRenovacion { get; set; } = 30;
+
+    /// <summary>Duración absoluta de una sesión desde su inicio de sesión: renovar nunca la extiende más allá de esto.</summary>
+    public int DiasMaximosSesion { get; set; } = 30;
     public string GoogleClientId { get; set; } = "";
 
     /// <summary>Cookie del token de renovación. En desarrollo local (http) se desactiva la marca Secure.</summary>
     public bool CookieSegura { get; set; } = true;
     public string CookieSameSite { get; set; } = "Lax";
 
-    /// <summary>Dominios de correo cuyos docentes se verifican solos. Vacío = ninguno.</summary>
-    public string[] DominiosDocentes { get; set; } = [];
 
-    /// <summary>Si es true, cualquier cuenta Google que lo solicite recibe el rol docente. Solo para desarrollo/demostración.</summary>
-    public bool DocentePorGoogleAbierto { get; set; }
 }

@@ -122,6 +122,43 @@ class FalsoAcceso implements RepositorioAcceso {
 
   @override
   Future<void> cerrarSesion() async => cierres++;
+
+  // ---- Restauración de sesión y confirmación del rol docente
+  ResultadoAcceso? cuentaRecuperable; // null = no hay sesión de cuenta (401)
+  bool invitadoVigente = false;
+  ExcepcionApi? errorRestauracion; // por ejemplo, sin conexión
+  List<String>?
+  rolesPerfil; // lo que responde /usuarios/yo; null = los de la cuenta
+  int renovaciones = 0;
+  int confirmacionesDocente = 0;
+  ExcepcionApi? errorConfirmar;
+
+  @override
+  Future<ResultadoAcceso?> renovarSesion() async {
+    renovaciones++;
+    if (errorRestauracion != null) throw errorRestauracion!;
+    return cuentaRecuperable;
+  }
+
+  @override
+  Future<PerfilUsuario> obtenerPerfil() async => PerfilUsuario(
+    roles: rolesPerfil ?? cuentaRecuperable!.roles,
+    nombreMostrar: cuentaRecuperable!.nombreMostrar,
+  );
+
+  @override
+  Future<bool> hayInvitadoVigente() async => invitadoVigente;
+
+  @override
+  Future<ResultadoAcceso> confirmarRolDocente() async {
+    confirmacionesDocente++;
+    if (errorConfirmar != null) throw errorConfirmar!;
+    return const ResultadoAcceso(
+      tokenAcceso: 'TOKEN-DOCENTE',
+      roles: ['docente'],
+      nombreMostrar: 'Profe Rosa',
+    );
+  }
 }
 
 /// Partida guionada: dos preguntas; la opción 'a' es la correcta de la prueba (solo este doble lo sabe).

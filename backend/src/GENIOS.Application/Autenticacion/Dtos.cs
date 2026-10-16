@@ -4,7 +4,7 @@ public record SolicitudRegistroEstudiante(string? CodigoAula, string NombreUsuar
 
 public record SolicitudInicioSesionEstudiante(string NombreUsuario, string Contrasena);
 
-public record SolicitudGoogle(string IdToken, bool SolicitaRolDocente);
+public record SolicitudGoogle(string IdToken);
 
 public record SolicitudConfirmarRestablecimiento(string NombreUsuario, string Codigo, string ContrasenaNueva);
 

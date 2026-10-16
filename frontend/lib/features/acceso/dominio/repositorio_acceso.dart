@@ -1,3 +1,5 @@
+import '../../../core/red/excepcion_api.dart';
+
 class ResultadoAcceso {
   const ResultadoAcceso({
     required this.tokenAcceso,
@@ -10,7 +12,27 @@ class ResultadoAcceso {
   final String nombreMostrar;
 }
 
+/// Quién es el usuario según el servidor (`GET /usuarios/yo`). El rol siempre viene de aquí, nunca de la app.
+class PerfilUsuario {
+  const PerfilUsuario({required this.roles, required this.nombreMostrar});
+
+  final List<String> roles;
+  final String nombreMostrar;
+}
+
 abstract class RepositorioAcceso {
+  /// Renueva la sesión con la cookie de renovación. null = no hay sesión de cuenta (401/403).
+  /// Red caída o error del servidor lanzan [ExcepcionApi]: no son una sesión vencida.
+  Future<ResultadoAcceso?> renovarSesion();
+
+  Future<PerfilUsuario> obtenerPerfil();
+
+  /// true si la cookie de invitado del navegador sigue siendo válida.
+  Future<bool> hayInvitadoVigente();
+
+  /// Confirma el rol docente (permanente). El servidor decide si corresponde.
+  Future<ResultadoAcceso> confirmarRolDocente();
+
   /// Crea (o reutiliza, si el navegador ya tiene la cookie) la sesión de invitado.
   /// La API no recibe ningún dato personal: la identidad de la sesión la genera el servidor.
   Future<void> crearSesionInvitado();

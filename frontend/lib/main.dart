@@ -13,7 +13,7 @@ import 'features/progreso/datos/repositorio_progreso_api.dart';
 import 'features/salon/datos/repositorio_salon_api.dart';
 
 void main() {
-  final sesion = SesionApp();
+  final sesion = SesionApp()..marcarRestaurando();
 
   // Con credenciales, el navegador envía y guarda las cookies HttpOnly de la API (renovación e invitado).
   final cliente = ClienteApi(
@@ -32,6 +32,7 @@ void main() {
       repositorioSalon: RepositorioSalonApi(cliente),
       repositorioDocente: RepositorioDocenteApi(cliente),
       googleClientId: Configuracion.googleClientId,
+      restaurarAlIniciar: true,
     ),
   );
 }

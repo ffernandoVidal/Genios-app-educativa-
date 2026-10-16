@@ -220,13 +220,14 @@ public class ServicioAutenticacion(
         if (usuario.Estado != "activo")
             throw Error(TipoError.Prohibido, "cuenta_no_activa", "La cuenta no está activa.");
 
-        if (solicitud.SolicitaRolDocente)
-            await AplicarAltaDocenteAsync(usuario, contexto, ct);
-
         usuario.UltimoAccesoEn = DateTime.UtcNow;
         return (await CrearSesionAsync(usuario, null, ct)).Resultado;
     }
 
+    /// <summary>
+    /// Identidad nueva de Google: se crea sin rol y sin perfiles. El rol docente se concede solo al confirmarlo
+    /// (<see cref="ConfirmarRolDocenteAsync"/>), nunca por un parámetro de la solicitud.
+    /// </summary>
     private async Task<Usuarios> CrearUsuarioGoogleAsync(DatosGoogle datos, CancellationToken ct)
     {
         var correoNormalizado = ReglasCuenta.NormalizarCorreo(datos.Correo);
@@ -235,7 +236,6 @@ public class ServicioAutenticacion(
         if (await bd.Usuarios.AnyAsync(u => u.CorreoNormalizado == correoNormalizado, ct))
             throw Error(TipoError.Conflicto, "correo_ya_registrado", "Ese correo ya está asociado a otra cuenta.");
 
-        var rolId = await ObtenerRolIdAsync(CodigosRol.Estudiante, ct);
         var nombre = datos.Nombre.Trim();
         var usuario = new Usuarios
         {
@@ -258,8 +258,6 @@ public class ServicioAutenticacion(
             IdentificadorExterno = datos.Sub,
             CorreoProveedor = datos.Correo
         });
-        bd.PerfilesEstudiante.Add(new PerfilesEstudiante { UsuarioId = usuario.Id, Activo = true });
-        bd.UsuariosRoles.Add(new UsuariosRoles { UsuarioId = usuario.Id, RolId = rolId });
 
         try
         {
@@ -272,32 +270,45 @@ public class ServicioAutenticacion(
         return usuario;
     }
 
-    /// <summary>El rol docente solo se concede si el dominio del correo está en la lista configurada.</summary>
-    private async Task AplicarAltaDocenteAsync(Usuarios usuario, ContextoSolicitud contexto, CancellationToken ct)
+    public async Task<RespuestaAutenticacion> ConfirmarRolDocenteAsync(Guid usuarioId, ContextoSolicitud contexto, CancellationToken ct)
     {
+        var usuario = await bd.Usuarios.SingleOrDefaultAsync(u => u.Id == usuarioId && u.Estado == "activo", ct)
+            ?? throw Error(TipoError.NoAutenticado, "usuario_no_encontrado", "No se encontró el usuario.");
+        if (usuario.MetodoRegistro != "google")
+            throw Error(TipoError.Prohibido, "rol_no_permitido", "Esta cuenta no puede ser docente.");
+
         var rolDocenteId = await ObtenerRolIdAsync(CodigosRol.Docente, ct);
-        if (await bd.UsuariosRoles.AnyAsync(r => r.UsuarioId == usuario.Id && r.RolId == rolDocenteId, ct)) return;
+        var roles = await ObtenerRolesAsync(usuarioId, ct);
 
-        var perfil = await bd.PerfilesDocente.FindAsync([usuario.Id], ct);
-        if (perfil is null)
+        if (!roles.Contains(CodigosRol.Docente))
         {
-            perfil = new PerfilesDocente { UsuarioId = usuario.Id, CorreoEducativo = usuario.Correo };
-            bd.PerfilesDocente.Add(perfil);
+            // Los roles son exclusivos: una cuenta que ya tiene otro rol (estudiante) nunca pasa a docente.
+            if (roles.Count > 0)
+                throw Error(TipoError.Prohibido, "rol_no_permitido", "Esta cuenta ya tiene un rol y no puede cambiarlo.");
+
+            var concedido = false;
+            try
+            {
+                await using var transaccion = await bd.Database.BeginTransactionAsync(ct);
+                if (!await bd.PerfilesDocente.AnyAsync(p => p.UsuarioId == usuarioId, ct))
+                    bd.PerfilesDocente.Add(new PerfilesDocente { UsuarioId = usuarioId, CorreoEducativo = usuario.Correo, VerificadoEn = DateTime.UtcNow });
+                bd.UsuariosRoles.Add(new UsuariosRoles { UsuarioId = usuarioId, RolId = rolDocenteId });
+                await bd.SaveChangesAsync(ct);
+                await transaccion.CommitAsync(ct);
+                concedido = true;
+            }
+            catch (DbUpdateException e) when (e.EsViolacionUnica())
+            {
+                // Dos confirmaciones a la vez: gana una; la otra encuentra el rol ya concedido.
+                bd.ChangeTracker.Clear();
+            }
+            if (concedido) await auditoria.RegistrarAsync("docente_confirmado", usuarioId, contexto);
+            roles = await ObtenerRolesAsync(usuarioId, ct);
+            if (!roles.Contains(CodigosRol.Docente) || roles.Count != 1)
+                throw Error(TipoError.Prohibido, "rol_no_permitido", "Esta cuenta ya tiene un rol y no puede cambiarlo.");
         }
 
-        var correo = usuario.Correo ?? "";
-        var dominio = correo[(correo.IndexOf('@') + 1)..].ToLowerInvariant();
-        var dominioPermitido = _opciones.DocentePorGoogleAbierto
-            || _opciones.DominiosDocentes.Any(d => d.Trim().ToLowerInvariant() == dominio);
-        if (dominioPermitido)
-        {
-            perfil.VerificadoEn = DateTime.UtcNow;
-            bd.UsuariosRoles.Add(new UsuariosRoles { UsuarioId = usuario.Id, RolId = rolDocenteId });
-        }
-        await bd.SaveChangesAsync(ct);
-
-        if (dominioPermitido)
-            await auditoria.RegistrarAsync(_opciones.DocentePorGoogleAbierto ? "docente_alta_abierta" : "docente_verificado_por_dominio", usuario.Id, contexto);
+        return new RespuestaAutenticacion(emisor.CrearTokenAcceso(usuarioId, roles), emisor.SegundosAcceso, ConvertirADto(usuario, roles));
     }
 
     // ---------------------------------------------------------------- Sesiones
@@ -330,7 +341,12 @@ public class ServicioAutenticacion(
         var usuario = await bd.Usuarios.SingleAsync(u => u.Id == sesion.UsuarioId, ct);
         if (usuario.Estado != "activo") throw SesionInvalida();
 
-        var (resultado, nuevaSesionId) = await CrearSesionAsync(usuario, sesion.FamiliaTokenId, ct);
+        // La sesión nació con el primer token de su familia; renovar no puede pasar de ese origen + el máximo.
+        var inicioSesion = await bd.SesionesAutenticacion
+            .Where(s => s.FamiliaTokenId == sesion.FamiliaTokenId).MinAsync(s => s.CreadoEn, ct);
+        if (inicioSesion.AddDays(_opciones.DiasMaximosSesion) <= ahora) throw SesionInvalida();
+
+        var (resultado, nuevaSesionId) = await CrearSesionAsync(usuario, sesion.FamiliaTokenId, ct, inicioSesion);
         await bd.SesionesAutenticacion.Where(s => s.Id == sesion.Id)
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.ReemplazadoPorId, nuevaSesionId), ct);
 
@@ -338,8 +354,9 @@ public class ServicioAutenticacion(
         return resultado;
     }
 
-    public async Task CerrarSesionAsync(string tokenRenovacion, CancellationToken ct)
+    public async Task CerrarSesionAsync(string? tokenRenovacion, CancellationToken ct)
     {
+        if (string.IsNullOrEmpty(tokenRenovacion)) return;
         var hash = emisor.CalcularHash(tokenRenovacion ?? "");
         var sesion = await bd.SesionesAutenticacion.SingleOrDefaultAsync(s => s.TokenHash == hash, ct);
         if (sesion is not null) await RevocarFamiliaAsync(sesion.FamiliaTokenId, ct);
@@ -357,7 +374,7 @@ public class ServicioAutenticacion(
             .Where(s => s.FamiliaTokenId == familiaId && s.RevocadoEn == null)
             .ExecuteUpdateAsync(s => s.SetProperty(x => x.RevocadoEn, DateTime.UtcNow), ct);
 
-    private async Task<(ResultadoSesion Resultado, Guid SesionId)> CrearSesionAsync(Usuarios usuario, Guid? familiaId, CancellationToken ct)
+    private async Task<(ResultadoSesion Resultado, Guid SesionId)> CrearSesionAsync(Usuarios usuario, Guid? familiaId, CancellationToken ct, DateTime? inicioSesion = null)
     {
         var roles = await ObtenerRolesAsync(usuario.Id, ct);
         var (token, hash) = emisor.CrearTokenRenovacion();
@@ -369,7 +386,8 @@ public class ServicioAutenticacion(
             TokenHash = hash,
             FamiliaTokenId = familiaId ?? Guid.NewGuid(),
             CreadoEn = ahora,
-            ExpiraEn = ahora.AddDays(_opciones.DiasRenovacion)
+            // Vigencia del token, sin pasar nunca del límite absoluto de la sesión.
+            ExpiraEn = Minimo(ahora.AddDays(_opciones.DiasRenovacion), (inicioSesion ?? ahora).AddDays(_opciones.DiasMaximosSesion))
         };
         bd.SesionesAutenticacion.Add(sesion);
         await bd.SaveChangesAsync(ct);
@@ -396,6 +414,8 @@ public class ServicioAutenticacion(
             throw Error(TipoError.Validacion, "contrasena_invalida",
                 $"La contraseña debe tener entre {ReglasCuenta.LargoMinimoContrasena} y {ReglasCuenta.LargoMaximoContrasena} caracteres.");
     }
+
+    private static DateTime Minimo(DateTime a, DateTime b) => a < b ? a : b;
 
     private static ExcepcionNegocio SesionInvalida() =>
         Error(TipoError.NoAutenticado, "sesion_invalida", "La sesión no es válida. Inicia sesión de nuevo.");
