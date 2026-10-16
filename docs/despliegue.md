@@ -36,15 +36,23 @@ Sesiones, cookies y rol docente: ver `docs/sesiones.md` (la API en `api.genios.s
 
 `Google__ClientSecret` no se usa y no hace falta en Render.
 
-## 2. Cloudflare Pages (frontend)
-Cloudflare Pages no trae el SDK de Flutter, por eso se compila en tu equipo y se sube `build/web`:
+## 2. Cloudflare Workers Builds (frontend)
+El Worker `genios-siacgt` se compila y publica solo con cada push a `main` (Workers & Pages → `genios-siacgt` → Settings → Builds → Connect). Archivos: `frontend/wrangler.jsonc` (nombre del Worker y carpeta `build/web`, sin rutas ni variables, para no tocar el dominio ni los ajustes del panel) y `frontend/cloudflare-build.sh` (instala Flutter 3.47.1 y compila).
 
-```
-cd frontend
-flutter build web --release --dart-define=URL_API=https://TU-API.onrender.com --dart-define=GOOGLE_CLIENT_ID=TU_ID_PUBLICO
-npx wrangler pages deploy build/web --project-name genios
-```
-(o en el panel: Workers & Pages → Create → Pages → Upload assets → arrastra `build/web`). Las rutas usan hash (`/#/...`), por eso no hace falta regla SPA. `GOOGLE_CLIENT_ID` y `URL_API` son públicos; nunca pases secretos con `--dart-define`.
+| Campo | Valor |
+|---|---|
+| Repositorio / rama | `ffernandoVidal/Genios-app-educativa-` / `main` |
+| Root directory | `frontend` |
+| Build command | `bash cloudflare-build.sh` |
+| Deploy command | `npx wrangler deploy` |
+| Build watch paths | incluir `frontend/*`; excluir `backend/*`, `docs/*`, `database/*`, `tools/*` |
+| Preview builds | desactivadas |
+| Build variables (tipo Variable) | `URL_API=https://api.genios.siacgt.com`, `GOOGLE_CLIENT_ID=<id publico>` |
+
+Nunca pongas secretos del backend en las variables de build. Las rutas usan hash (`/#/...`), no hace falta regla SPA.
+Verificar: log del build, `https://genios.siacgt.com` en ventana privada, dominio aún asignado en Domains & Routes.
+Rollback: Deployments/Version History del Worker → elegir la versión anterior, o `npx wrangler rollback`.
+Manual (alternativa): `flutter build web --release --dart-define=URL_API=... --dart-define=GOOGLE_CLIENT_ID=...` y `npx wrangler deploy` desde `frontend/`.
 
 ## 3. Google Cloud Console
 APIs y servicios → Credenciales → tu ID de cliente OAuth (Aplicación web) → **Orígenes autorizados de JavaScript**: añade `https://TU-PROYECTO.pages.dev`. No se necesitan URI de redirección (se usa el token ID).
