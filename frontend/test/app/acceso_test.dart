@@ -171,26 +171,44 @@ void main() {
     );
 
     testWidgets(
-      'ofrece crear una cuenta y mantiene el acceso docente como flujo separado',
+      'la pantalla de inicio de sesión no ofrece crear cuenta ni código de docente, y tiene el botón docente',
       (t) async {
         await abrirApp(t);
         await t.tap(find.text('INICIAR SESIÓN'));
         await t.pumpAndSettle();
 
-        await t.tap(find.text('Crear una cuenta'));
-        await t.pumpAndSettle();
-        expect(
-          find.text('Crea tu cuenta y juega. El código de aula es opcional.'),
-          findsOneWidget,
-        );
+        expect(find.text('¡Qué bueno verte de nuevo!'), findsOneWidget);
+        expect(find.text('Crear una cuenta'), findsNothing);
+        expect(find.text('Tengo un código de mi docente'), findsNothing);
+        expect(find.text('Soy docente'), findsNothing);
+        expect(find.text('ENTRAR'), findsOneWidget);
+        expect(find.byType(TextField), findsNWidgets(2));
 
-        GoRouter.of(t.element(find.text('Crear mi cuenta').first))
-            .go('/docente');
+        await t.tap(find.text('INICIAR SESIÓN GENIO'));
         await t.pumpAndSettle();
         expect(find.text('Acceso docente'), findsOneWidget);
         expect(find.text('CONTINUAR CON GOOGLE'), findsOneWidget);
       },
     );
+
+    for (final tamano in const [
+      Size(360, 640),
+      Size(768, 1024),
+      Size(1440, 900),
+    ]) {
+      testWidgets(
+        'el botón «INICIAR SESIÓN GENIO» cabe sin desbordes en ${tamano.width.toInt()}x${tamano.height.toInt()}',
+        (t) async {
+          await abrirApp(t, tamano: tamano);
+          await t.tap(find.text('INICIAR SESIÓN'));
+          await t.pumpAndSettle();
+
+          await t.ensureVisible(find.text('INICIAR SESIÓN GENIO'));
+          expect(find.text('INICIAR SESIÓN GENIO'), findsOneWidget);
+          expect(t.takeException(), isNull);
+        },
+      );
+    }
   });
 
   group('crear cuenta con código de aula', () {
@@ -206,7 +224,7 @@ void main() {
         final app = await abrirApp(t, acceso: acceso);
         await t.tap(find.text('INICIAR SESIÓN'));
         await t.pumpAndSettle();
-        await t.tap(find.text('Crear una cuenta'));
+        GoRouter.of(t.element(find.byType(Scaffold).first)).go('/registro');
         await t.pumpAndSettle();
         expect(find.byType(TextField), findsNWidgets(4));
         expect(find.textContaining('no se pasa a ella'), findsOneWidget);
@@ -237,7 +255,7 @@ void main() {
       final app = await abrirApp(t);
       await t.tap(find.text('INICIAR SESIÓN'));
       await t.pumpAndSettle();
-      await t.tap(find.text('Crear una cuenta'));
+      GoRouter.of(t.element(find.byType(Scaffold).first)).go('/registro');
       await t.pumpAndSettle();
 
       final campos = find.byType(TextField);
@@ -257,7 +275,7 @@ void main() {
       final app = await abrirApp(t);
       await t.tap(find.text('INICIAR SESIÓN'));
       await t.pumpAndSettle();
-      await t.tap(find.text('Crear una cuenta'));
+      GoRouter.of(t.element(find.byType(Scaffold).first)).go('/registro');
       await t.pumpAndSettle();
 
       final campos = find.byType(TextField);

@@ -9,7 +9,7 @@ import '../soporte/repositorios_falsos.dart';
 Future<void> abrirAccesoDocente(WidgetTester t) async {
   await t.tap(find.text('INICIAR SESIÓN'));
   await t.pumpAndSettle();
-  await t.tap(find.text('Soy docente'));
+  await t.tap(find.text('INICIAR SESIÓN GENIO'));
   await t.pumpAndSettle();
 }
 

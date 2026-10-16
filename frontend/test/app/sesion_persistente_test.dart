@@ -127,7 +127,7 @@ void main() {
       final app = await abrirApp(t, acceso: acceso);
       await t.tap(find.text('INICIAR SESIÓN'));
       await t.pumpAndSettle();
-      await t.tap(find.text('Soy docente'));
+      await t.tap(find.text('INICIAR SESIÓN GENIO'));
       await t.pumpAndSettle();
       await t.tap(find.text('CONTINUAR CON GOOGLE'));
       await t.pumpAndSettle();
@@ -182,7 +182,7 @@ void main() {
       final app = await abrirApp(t, acceso: acceso);
       await t.tap(find.text('INICIAR SESIÓN'));
       await t.pumpAndSettle();
-      await t.tap(find.text('Soy docente'));
+      await t.tap(find.text('INICIAR SESIÓN GENIO'));
       await t.pumpAndSettle();
       await t.tap(find.text('CONTINUAR CON GOOGLE'));
       await t.pumpAndSettle();

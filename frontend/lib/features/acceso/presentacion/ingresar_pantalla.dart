@@ -11,8 +11,8 @@ import '../../../diseno/tokens/tipografia.dart';
 import 'acceso_cubit.dart';
 import 'mensaje_error_acceso.dart';
 
-/// Iniciar sesión de estudiante con usuario y contraseña. Desde aquí se puede crear una cuenta;
-/// el acceso docente con Google es un flujo separado.
+/// Iniciar sesión de estudiante con usuario y contraseña. El botón «INICIAR SESIÓN GENIO»
+/// lleva al acceso docente con Google, que es un flujo separado.
 class IngresarPantalla extends StatefulWidget {
   const IngresarPantalla({super.key});
 
@@ -92,23 +92,14 @@ class _IngresarPantallaState extends State<IngresarPantalla> {
               ),
               MensajeErrorAcceso(mensaje: estado.mensajeError),
               const SizedBox(height: Espaciado.l),
-              TextButton(
-                onPressed: estado.ocupado
-                    ? null
-                    : () => context.push('/registro'),
-                child: const Text('Crear una cuenta'),
-              ),
-              TextButton(
-                onPressed: estado.ocupado
-                    ? null
-                    : () => context.push('/activar'),
-                child: const Text('Tengo un código de mi docente'),
-              ),
-              TextButton(
-                onPressed: estado.ocupado
-                    ? null
-                    : () => context.push('/docente'),
-                child: const Text('Soy docente'),
+              Center(
+                child: BotonPrincipalJuego(
+                  texto: 'INICIAR SESIÓN GENIO',
+                  icono: Icons.school_rounded,
+                  alPulsar: estado.ocupado
+                      ? null
+                      : () => context.push('/docente'),
+                ),
               ),
             ],
           ),
